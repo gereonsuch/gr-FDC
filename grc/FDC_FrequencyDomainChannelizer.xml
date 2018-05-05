@@ -1,0 +1,248 @@
+<?xml version="1.0"?>
+<block>
+  <name>Frequency Domain Channelizer</name>
+  <key>FDC_FrequencyDomainChannelizer</key>
+  <category>[FDC]</category>
+  <import>import FDC</import>
+  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_detection_channels, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $act_control_threaded)</make>
+  
+  
+  <param_tab_order>
+    <tab>General</tab>
+    <tab>Throughput channels</tab>
+    <tab>Activity detection</tab>
+  </param_tab_order>
+
+
+<!-- ###General### -->
+
+<param>
+		<name>IO Type</name>
+		<key>type</key>
+		<type>enum</type>
+		<option>
+			<name>Complex</name>
+			<key>complex</key>
+			<opt>size:gr.sizeof_gr_complex</opt>
+		</option>
+		<option>
+			<name>Float</name>
+			<key>float</key>
+			<opt>size:gr.sizeof_float</opt>
+		</option>
+		<tab>General</tab>
+	</param>
+	
+	
+  <param>
+    <name>Blocklen</name>
+    <key>blocksize</key>
+    <value>2**12</value>
+    <type>int</type>
+    <tab>General</tab>
+  </param>
+  <param>
+    <name>Relative inverse overlap</name>
+    <key>relinvovl</key>
+    <value>4</value>
+    <type>int</type>
+    <tab>General</tab>
+  </param>
+  
+  
+  
+<!-- signal parameter.... variable -->
+<param>
+		<name>Frequency mode</name>
+		<key>freqmode</key>
+		<type>enum</type>
+		<option>
+			<name>Normalized baseband</name>
+			<key>0</key>
+		</option>
+		<option>
+			<name>Baseband + sample rate</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>Centerfreq + sample rate</name>
+			<key>2</key>
+		</option>
+		<tab>General</tab>
+	</param>
+
+	<param>
+    <name>Samprate</name>
+    <key>fs</key>
+    <value>samp_rate</value>
+    <type>float</type>
+    <tab>General</tab>
+  </param>
+  
+  <param>
+    <name>Base frequency</name>
+    <key>centerfrequency</key>
+    <value>3e6</value>
+    <type>float</type>
+    <tab>General</tab>
+  </param>
+  
+  
+  
+  
+  
+  <!-- ###Throughput channels### -->
+  <param>
+		<name>Window</name>
+		<key>windowtype</key>
+		<type>enum</type>
+		<option>
+			<name>Rectangular</name>
+			<key>0</key>
+		</option>
+		<option>
+			<name>HANN</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>Ramp</name>
+			<key>2</key>
+		</option>
+		<tab>Throughput channels</tab>
+	</param>
+	
+	<param>
+	<name>Channels</name>
+	<key>throughput_channels</key>
+	<value>[ [0.2, 0.05], [0.4,0.05], [0.6,0.05] ]</value>
+	<type>raw</type>
+	<tab>Throughput channels</tab>
+	</param>
+	
+	
+	
+	
+	
+	<!-- ###Activity detection### -->
+  <param>
+		<name>Window</name>
+		<key>windowtype_activity</key>
+		<type>enum</type>
+		<option>
+			<name>Rectangular</name>
+			<key>0</key>
+		</option>
+		<option>
+			<name>HANN</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>Ramp</name>
+			<key>2</key>
+		</option>
+		<tab>Activity detection</tab>
+	</param>
+	
+	<param>
+	<name>Channels</name>
+	<key>activity_detection_channels</key>
+	<value>[ [0.2, 0.05], [0.4,0.05], [0.6,0.05] ]</value>
+	<type>raw</type>
+	<tab>Activity detection</tab>
+	</param>
+	
+	<param>
+	<name>Power Threshold[dB]</name>
+	<key>threshold</key>
+	<value>6</value>
+	<type>float</type>
+	<tab>Activity detection</tab>
+	</param>
+	
+	<param>
+	<name>Maximum active blocks</name>
+	<key>maxactiveblocks</key>
+	<value>128</value>
+	<type>int</type>
+	<tab>Activity detection</tab>
+	</param>
+	
+	<param>
+		<name>Message Output</name>
+		<key>msgoutput</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+		</option>
+		<tab>Activity detection</tab>
+	</param>
+	<param>
+		<name>File Output</name>
+		<key>fileoutput</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+		</option>
+		<tab>Activity detection</tab>
+	</param>
+	
+	<param>
+	<name>Output path</name>
+	<key>outputpath</key>
+	<value>/home/user/...</value>
+	<type>string</type>
+	<tab>Activity detection</tab>
+	</param>
+	
+	<param>
+		<name>Threaded</name>
+		<key>act_control_threaded</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+		</option>
+	</param>
+	
+  
+  
+  
+  
+  
+  
+  <sink>
+    <name>in</name>
+    <type>$type</type>
+  </sink>
+
+
+  
+  
+  <source>
+    <name>out</name>
+    <type>complex</type>
+    <nports>len($throughput_channels)</nports>
+  </source>
+  
+  <source>
+	<name>msgport</name>
+	<type>message</type>
+	<optional>1</optional>
+  </source>
+  
+  
+</block>
