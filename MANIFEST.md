@@ -1,16 +1,13 @@
 title: The FDC OOT Module
-brief: Short description of gr-FDC
+brief: gr-FDC is a versatile frequency domain channelizer module
 tags: # Tags are arbitrary, but look at CGRAN what other authors are using
   - sdr
 author:
-  - Author Name <authors@email.address>
+  - Gereon Such <gereonsuch@gmail.com>
 copyright_owner:
-  - Copyright Owner 1
+  - Gereon Such
 license:
-#repo: # Put the URL of the repository here, or leave blank for default
-#website: <module_website> # If you have a separate project website, put it here
-#icon: <icon_url> # Put a URL to a square image here that will be used as an icon on CGRAN
+repo: https://github.com/gereonsuch/gr-FDC.git
+website: https://gereonsuch-sdr.com
 ---
-A longer, multi-line description of gr-FDC.
-You may use some *basic* Markdown here.
-If left empty, it will try to find a README file instead.
+
