@@ -1,0 +1,3 @@
+#excluding some folders for convinience
+build/
+CMakeLists.txt.user*
