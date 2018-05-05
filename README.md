@@ -1,8 +1,8 @@
 # gr-FDC
 
-Author:  Gereon Such
-Email:   gereonsuch@gmail.com
-Website: https://gereonsuch-sdr.com
+* Author:  Gereon Such
+* Email:   gereonsuch@gmail.com
+* Website: https://gereonsuch-sdr.com
 
 ## Description
 
