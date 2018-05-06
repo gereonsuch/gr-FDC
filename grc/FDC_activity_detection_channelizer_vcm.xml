@@ -4,7 +4,7 @@
   <key>FDC_activity_detection_channelizer_vcm</key>
   <category>[FDC]</category>
   <import>import FDC</import>
-  <make>FDC.activity_detection_channelizer_vcm($blocklen, $segments, $thresh, $relinvovl, $maxblocks, $message, $fileoutput, $path, $threads, $minchandist, $channeldeactivationdelay, $channelflankpuffer)</make>
+  <make>FDC.activity_detection_channelizer_vcm($blocklen, $segments, $thresh, $relinvovl, $maxblocks, $message, $fileoutput, $path, $threads, $minchandist, $channeldeactivationdelay, $channelflankpuffer, $verbose, $logfile)</make>
   <!-- int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist -->
   
   <param>
@@ -121,6 +121,28 @@
   
   
   
+  
+  <param>
+		<name>Log/verbose destination</name>
+		<key>verbose</key>
+		<type>enum</type>
+		<option>
+			<name>None</name>
+			<key>0</key>
+		</option>
+		<option>
+			<name>Print to console</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>Log to file</name>
+			<key>2</key>
+		</option>
+	</param>
+	
+	
+	
+	
 <sink>
     <name>in</name>
     <type>complex</type>

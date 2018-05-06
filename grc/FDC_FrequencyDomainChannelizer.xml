@@ -4,12 +4,13 @@
   <key>FDC_FrequencyDomainChannelizer</key>
   <category>[FDC]</category>
   <import>import FDC</import>
-  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_detection_channels, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $act_control_threaded)</make>
+  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $deactivation_delay, $minchanflankpuffer, $verbose)</make>
   
-  
+
   <param_tab_order>
     <tab>General</tab>
     <tab>Throughput channels</tab>
+    <tab>Activity controlled</tab>
     <tab>Activity detection</tab>
   </param_tab_order>
 
@@ -49,6 +50,20 @@
     <tab>General</tab>
   </param>
   
+  
+  <param>
+		<name>Threaded</name>
+		<key>threaded</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+		</option>
+	</param>
   
   
 <!-- signal parameter.... variable -->
@@ -91,6 +106,71 @@
   
   
   
+  
+  <param>
+		<name>Message Output</name>
+		<key>msgoutput</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+		</option>
+		<tab>General</tab>
+	</param>
+	
+	<param>
+		<name>File Output</name>
+		<key>fileoutput</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+		</option>
+		<tab>General</tab>
+	</param>
+	
+	<param>
+	<name>Output path</name>
+	<key>outputpath</key>
+	<value>/home/user/...</value>
+	<type>string</type>
+	<tab>General</tab>
+	</param>
+  
+  
+  
+  <param>
+		<name>Log/verbose destination</name>
+		<key>verbose</key>
+		<type>enum</type>
+		<option>
+			<name>None</name>
+			<key>0</key>
+		</option>
+		<option>
+			<name>Print to console</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>Log to file</name>
+			<key>2</key>
+		</option>
+	</param>
+	
+	
+	
+  
+  
+  
+  
   <!-- ###Throughput channels### -->
   <param>
 		<name>Window</name>
@@ -123,7 +203,7 @@
 	
 	
 	
-	<!-- ###Activity detection### -->
+	<!-- ###Activity controlled### -->
   <param>
 		<name>Window</name>
 		<key>windowtype_activity</key>
@@ -140,23 +220,23 @@
 			<name>Ramp</name>
 			<key>2</key>
 		</option>
-		<tab>Activity detection</tab>
+		<tab>Activity controlled</tab>
 	</param>
 	
 	<param>
 	<name>Channels</name>
-	<key>activity_detection_channels</key>
+	<key>activity_controlled_channels</key>
 	<value>[ [0.2, 0.05], [0.4,0.05], [0.6,0.05] ]</value>
 	<type>raw</type>
-	<tab>Activity detection</tab>
+	<tab>Activity controlled</tab>
 	</param>
 	
 	<param>
 	<name>Power Threshold[dB]</name>
-	<key>threshold</key>
+	<key>act_contr_threshold</key>
 	<value>6</value>
 	<type>float</type>
-	<tab>Activity detection</tab>
+	<tab>Activity controlled</tab>
 	</param>
 	
 	<param>
@@ -164,60 +244,56 @@
 	<key>maxactiveblocks</key>
 	<value>128</value>
 	<type>int</type>
+	<tab>Activity controlled</tab>
+	</param>
+	
+	
+	
+	
+	
+  
+  
+  <!--###Activity detection###-->
+  
+  <param>
+	<name>Segments</name>
+	<key>activity_detection_segments</key>
+	<value>[ [0.1, 0.2], [0.7, 0.9], ]</value>
+	<type>raw</type>
 	<tab>Activity detection</tab>
 	</param>
 	
 	<param>
-		<name>Message Output</name>
-		<key>msgoutput</key>
-		<type>enum</type>
-		<option>
-			<name>Yes</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>No</name>
-			<key>0</key>
-		</option>
-		<tab>Activity detection</tab>
-	</param>
-	<param>
-		<name>File Output</name>
-		<key>fileoutput</key>
-		<type>enum</type>
-		<option>
-			<name>Yes</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>No</name>
-			<key>0</key>
-		</option>
-		<tab>Activity detection</tab>
-	</param>
-	
-	<param>
-	<name>Output path</name>
-	<key>outputpath</key>
-	<value>/home/user/...</value>
-	<type>string</type>
+	<name>Power Threshold[dB]</name>
+	<key>act_det_threshold</key>
+	<value>10</value>
+	<type>float</type>
 	<tab>Activity detection</tab>
 	</param>
-	
-	<param>
-		<name>Threaded</name>
-		<key>act_control_threaded</key>
-		<type>enum</type>
-		<option>
-			<name>Yes</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>No</name>
-			<key>0</key>
-		</option>
-	</param>
-	
+
+  <param>
+    <name>Minimum channel distance</name>
+    <key>minchandist</key>
+    <value>0.005</value>
+    <type>float</type>
+    <tab>Activity detection</tab>
+  </param>
+  
+  <param>
+    <name>Deactivation delay</name>
+    <key>deactivation_delay</key>
+    <value>1</value>
+    <type>int</type>
+    <tab>Activity detection</tab>
+  </param>
+  
+  <param>
+    <name>Min channel flank puffer</name>
+    <key>minchanflankpuffer</key>
+    <value>0.2</value>
+    <type>float</type>
+    <tab>Activity detection</tab>
+  </param>
   
   
   
@@ -233,9 +309,11 @@
   
   
   <source>
-    <name>out</name>
+    <name>throughput_out</name>
     <type>complex</type>
     <nports>len($throughput_channels)</nports>
+    <optional>1</optional>
+    <!-- <hide>len($throughput_channels)==0</hide> -->
   </source>
   
   <source>

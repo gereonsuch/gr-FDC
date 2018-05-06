@@ -30,10 +30,10 @@ namespace FDC {
 
 
 activity_controlled_channelizer_vcm::sptr
-activity_controlled_channelizer_vcm::make(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded)
+activity_controlled_channelizer_vcm::make(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int verbose)
 {
     return gnuradio::get_initial_sptr
-            (new activity_controlled_channelizer_vcm_impl(blocklen, channels, thresh, relinvovl, maxblocks, message, fileoutput, path, threaded));
+            (new activity_controlled_channelizer_vcm_impl(blocklen, channels, thresh, relinvovl, maxblocks, message, fileoutput, path, threaded, verbose));
 }
 
 
@@ -125,7 +125,7 @@ std::string channel::get_msg_ID(){
 /*
      * The private constructor
      */
-activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded)
+activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int verbose)
     : gr::sync_block("activity_controlled_channelizer_vcm",
                      gr::io_signature::make(1, 1, sizeof(gr_complex)*blocklen),
                      //gr::io_signature::make(1, 1, sizeof(gr_complex)))
@@ -156,17 +156,28 @@ activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_im
         if(channels[i].size()!=2)
             throw std::invalid_argument(std::string("Invalid channel size for channel ")+std::to_string(i)+std::string(": ")+std::to_string(channels[i].size())+std::string("\n"));
 
+        //channels[i][0] is normalized carrier frequency, channels[i][1] is normalized carrier bandwidth
         int start = (int)( round((channels[i][0] - channels[i][1]/2.0) * (double)veclen) );
-        if(start<0 || start>=veclen)
+        int width = nextpow2( (int)(round(channels[i][1] * (double)veclen * bwpuffer)) );
+
+        if(width<=0 || width>veclen)
+            throw std::invalid_argument(std::string("Invalid channel bandwidth for channel ")+std::to_string(i)+std::string(": ")+std::to_string(width)+std::string("\n"));
+
+        //adjusting start to not overlap end.
+        if(start<0)
+            start=0;
+        else if(start+width>veclen)
+            start=veclen-width;
+
+        if(start<0 || start+width>veclen)
             throw std::invalid_argument(std::string("Invalid channel start for channel ")+std::to_string(i)+std::string(": ")+std::to_string(start)+std::string("\n"));
 
-        int width = nextpow2( (int)(round(channels[i][1] * (double)veclen * bwpuffer)) );
-        if(width<0 || start+width>=veclen)
-            throw std::invalid_argument(std::string("Invalid channel bandwidth for channel ")+std::to_string(i)+std::string(": ")+std::to_string(width)+std::string("\n"));
+
+
 
         chans.push_back(channel(channelcounter++, start, width, width - width/relovl, relovl));
 
-        std::cout << "Init Chan " << chans[chans.size()-1].ID << ": f=" << chans[chans.size()-1].start << ", size=" << chans[chans.size()-1].size << std::endl;
+        std::cout << "# Init Chan " << chans[chans.size()-1].ID << ": f=" << chans[chans.size()-1].start << ", size=" << chans[chans.size()-1].size << std::endl;
     }
 
     hist.resize(veclen, gr_complex(0.0,0.0));
@@ -215,11 +226,11 @@ void activity_controlled_channelizer_vcm_impl::check_channels_singlethread(const
         if(c.set_power(curblock + c.start, threshold)){
             //true if state changed(active<->inactive)
             if(c.active){
-                std::cout << "Chan " << c.ID << "activated" << std::endl;
+                std::cout << "# Chan " << c.ID << "activated" << std::endl;
                 //just activated
                 get_channel_data_hist(lastblock+c.start, curblock+c.start, c);
             }else{
-                std::cout << "Chan " << c.ID << "deactivated" << std::endl;
+                std::cout << "# Chan " << c.ID << "deactivated" << std::endl;
                 //just deactivated
                 tx_data(c);
             }
@@ -243,11 +254,11 @@ void activity_controlled_channelizer_vcm_impl::check_channels_multithread(const 
         if(c.set_power(curblock + c.start, threshold)){
             //true if state changed(active<->inactive)
             if(c.active){
-                std::cout << "Chan " << c.ID << "activated" << std::endl;
+                std::cout << "# Chan " << c.ID << "activated" << std::endl;
                 //just activated
                 threads.push_back( std::thread(get_channel_data_hist, lastblock+c.start, curblock+c.start, std::ref(c)) );
             }else{
-                std::cout << "Chan " << c.ID << "deactivated" << std::endl;
+                std::cout << "# Chan " << c.ID << "deactivated" << std::endl;
                 //just deactivated
                 threads.push_back( std::thread(&activity_controlled_channelizer_vcm_impl::tx_data, this, std::ref(c)) );
             }

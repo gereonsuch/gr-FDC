@@ -154,7 +154,7 @@ private:
 
 
 public:
-    activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer);
+    activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int verbose);
     ~activity_detection_channelizer_vcm_impl();
 
     // Where all the action really happens

@@ -4,7 +4,7 @@
   <key>FDC_activity_controlled_channelizer_vcm</key>
   <category>[FDC]</category>
   <import>import FDC</import>
-  <make>FDC.activity_controlled_channelizer_vcm($blocklen, $channels, $thresh, $relinvovl, $maxblocks, $message, $fileoutput, $path, $threads)</make>
+  <make>FDC.activity_controlled_channelizer_vcm($blocklen, $channels, $thresh, $relinvovl, $maxblocks, $message, $fileoutput, $path, $threads, $verbose, $logfile)</make>
   
   
   
@@ -99,6 +99,27 @@
 	</param>
   
   
+  <param>
+		<name>Log/verbose destination</name>
+		<key>verbose</key>
+		<type>enum</type>
+		<option>
+			<name>None</name>
+			<key>0</key>
+		</option>
+		<option>
+			<name>Print to console</name>
+			<key>1</key>
+		</option>
+		<option>
+			<name>Log to file</name>
+			<key>2</key>
+		</option>
+	</param>
+	
+	
+	
+	
   <sink>
     <name>in</name>
     <type>complex</type>

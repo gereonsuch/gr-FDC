@@ -46,7 +46,7 @@ namespace gr {
        * class. FDC::activity_detection_channelizer_vcm::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer);
+      static sptr make(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int verbose);
     };
 
   } // namespace FDC

@@ -12,6 +12,18 @@ It's main purpose is channelization of multicarrier signals, i.e. demand assigne
 
 gr-FDC is unsuitable for Code division multiple access systems. 
 
+## Installation
+
+If you found thism you propably know how to install a GnuRadio OOT Module:
+
+'''console
+$ git clone https://github.com/gereonsuch/gr-FDC.git
+$ cd gr-FDC
+$ mkdir build
+$ cd build
+$ cmake .. && make && sudo make install && sudo ldconfig
+'''
+
 ## Disclaimer
 
 This is free software and no warranty whatsoever is given. Use and modify it responsibly. 

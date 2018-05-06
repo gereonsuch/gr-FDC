@@ -49,6 +49,12 @@ enum WINDOWTYPES{
     RAMP
 };
 
+enum VERBOSE{
+    NOLOG=0,
+    LOGTOCONSOLE=1,
+    LOGTOFILE=2
+};
+
 const double bwpuffer=1.2;
 
 class channel{
@@ -101,7 +107,7 @@ private:
     int channelcounter;
 
 public:
-    activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded);
+    activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int verbose);
     ~activity_controlled_channelizer_vcm_impl();
 
     void joinall();

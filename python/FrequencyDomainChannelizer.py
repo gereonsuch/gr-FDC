@@ -22,13 +22,17 @@
 from gnuradio import gr
 from gnuradio import blocks
 from gnuradio import fft
-from FDC import overlap_save, phase_shifting_windowing_vcc, vector_cut_vxx, activity_controlled_channelizer_vcm
+from FDC import overlap_save, phase_shifting_windowing_vcc, vector_cut_vxx, activity_controlled_channelizer_vcm, activity_detection_channelizer_vcm
 import numpy
 import pmt
+import os, time
 
 
 class FREQMODE:
     normalized, basebandfs, centerfreqfs = range(3)
+
+class VERBOSEMODE:
+    NOLOG, LOGTOCONSOLE, LOGTOFILE = range(3)
 
 def nextpow2(k):
     if k<1:
@@ -39,8 +43,11 @@ class FrequencyDomainChannelizer(gr.hier_block2):
     """
     docstring for block FrequencyDomainChannelizer
     """
-    def __init__(self, inptype, blocksize, relinvovl, throughput_channels, activity_detection_channels, fs, centerfrequency, freqmode, windowtype, msgoutput, fileoutput, outputpath, act_control_threaded):
+    def __init__(self, inptype, blocksize, relinvovl, throughput_channels, activity_controlled_channels, act_contr_threshold, fs, centerfrequency, freqmode, windowtype, msgoutput, fileoutput, outputpath, threaded, activity_detection_segments, act_det_threshold, minchandist, deactivation_delay, minchanflankpuffer, verbose):
+        #from GRC
+        #$type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $deactivation_delay, $minchanflankpuffer, $verbose
         
+        self.verbose=int(verbose)
         self.itemsize=inptype
         
         #all frequencies are stored normalized, thus we need conversion
@@ -82,19 +89,34 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         else:
             raise ValueError('Throughput channels are invalid. Exiting...')
         
-        #get all activity detection channels
-        self.activity_detection_channels=[]
-        if activity_detection_channels is None:
+        #get all activity controlled channels
+        self.activity_controlled_channels=[]
+        if activity_controlled_channels is None:
             pass
-        elif isinstance(activity_detection_channels,(list,tuple)):
-            self.activity_detection_channels=[]
-            for k in activity_detection_channels:
+        elif isinstance(activity_controlled_channels,(list,tuple)):
+            self.activity_controlled_channels=[]
+            for k in activity_controlled_channels:
                 c=self.get_channel(k)
                 if c is None:
                     raise ValueError('Cannot convert {} to channel. must be list or tuple with channel frequency and bandwidth. '.format(k))
-                self.activity_detection_channels.append(c)
+                self.activity_controlled_channels.append(c)
         else:
-            raise ValueError('Activity detection channels are invalid. Exiting...')
+            raise ValueError('Activity controlled channels are invalid. Exiting...')
+            
+        
+        #get all activity detection segments
+        self.activity_detection_segments=[]
+        if activity_detection_segments is None:
+            pass
+        elif isinstance(activity_detection_segments,(list,tuple)):
+            self.activity_detection_segments=[]
+            for k in activity_detection_segments:
+                c=self.get_segment(k)
+                if c is None:
+                    raise ValueError('Cannot convert {} to segment. must be list or tuple with channel start and stop frequency. '.format(k))
+                self.activity_detection_segments.append(c)
+        else:
+            raise ValueError('Activity detection segments are invalid. Exiting...')
         
         
         #define output stream signature depending on throughput channels. 
@@ -121,6 +143,22 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         
         
+        
+        #debug info
+        if(self.verbose):
+            self.log('\n' + '#'*32 + '\n')
+            self.log('# gr-FDC Frequency Domain Channelizer Runtime Information')
+            self.log('\n' + '#'*32 + '\n')
+            self.log('# Throughput channels:         {}'.format(str(self.throughput_channels)))
+            self.log('# Activity control channels:   {}'.format(str(self.activity_controlled_channels)))
+            self.log('# Activity detection segments: {}'.format(str(self.activity_detection_segments)))
+            self.log('\n' + '#'*32 + '\n')
+            
+        
+        
+        
+        
+        
         #define blocks
         self.inp_block_distr = blocks.stream_to_vector(self.itemsize, self.inpblocklen )
         self.overlap_save = overlap_save(self.itemsize, self.blocksize, self.ovllen)
@@ -135,7 +173,9 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         self.throughput_channelizers=[ [None]*5 for i in range(len(self.throughput_channels)) ]
         for i, (freq, bw) in enumerate(self.throughput_channels):
             f,l,lout,pbw,sbw = self.get_opt_channelparams(freq,bw)
-            print('Channel {}: f={}, l={}, lout={}, bw=({}, {})'.format(i,f,l,lout,sbw,pbw))
+            
+            self.log('# Throughput Channel {}: f={}, l={}, lout={}, bw=({}, {})'.format(i,f,l,lout,sbw,pbw))
+            
             self.throughput_channelizers[i][0] = vector_cut_vxx(gr.sizeof_gr_complex, self.blocksize, f, l )
             self.throughput_channelizers[i][1] = phase_shifting_windowing_vcc(l, self.relinvovl, f, pbw, sbw, windowtype)
             self.throughput_channelizers[i][2] = fft.fft_vcc(l, False, (fft.window.rectangular(l)), True, 1)
@@ -144,11 +184,43 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         self.N_throughput_channelizers=len(self.throughput_channelizers)
         
-        if len(self.activity_detection_channels):
-            self.activity_controlled_channelizer=activity_controlled_channelizer_vcm(self.blocksize, self.activity_detection_channels, 12.0, self.relinvovl, 64, bool(msgoutput), bool(fileoutput), outputpath, bool(act_control_threaded))
-            #int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path
         
-            
+        #create activity controlled channelizer if valid channels are present
+        if len(self.activity_controlled_channels):
+            self.activity_controlled_channelizer=activity_controlled_channelizer_vcm(self.blocksize, 
+                                                                                     self.activity_controlled_channels, 
+                                                                                     float(act_contr_threshold), 
+                                                                                     self.relinvovl, 
+                                                                                     64, 
+                                                                                     bool(msgoutput), 
+                                                                                     bool(fileoutput), 
+                                                                                     str(outputpath), 
+                                                                                     bool(threaded),
+                                                                                     self.verbose)
+            #int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, 
+            #bool message, bool fileoutput, std::string path
+        
+        
+        
+        #create activity detection channelizer if valid segments are present
+        
+        if len(self.activity_detection_segments):
+            self.activity_detection_channelizer=activity_detection_channelizer_vcm(self.blocksize, 
+                                                                                   self.activity_detection_segments, 
+                                                                                   float(act_det_threshold), 
+                                                                                   self.relinvovl, 
+                                                                                   64, 
+                                                                                   bool(msgoutput), 
+                                                                                   bool(fileoutput), 
+                                                                                   str(outputpath), 
+                                                                                   bool(threaded),
+                                                                                   float(minchandist),
+                                                                                   int(deactivation_delay) if int(deactivation_delay)>=0 else 0,
+                                                                                   float(minchanflankpuffer) if 0.0<=float(minchanflankpuffer) else 0.2,
+                                                                                   self.verbose)
+            #int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, 
+            #int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, 
+            #int v_channel_deactivation_delay, double v_window_flank_puffer
             
             
         
@@ -170,10 +242,15 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.connect( (self.throughput_channelizers[i][3], 0), (self.throughput_channelizers[i][4], 0) )
             self.connect( (self.throughput_channelizers[i][4], 0), (self, i) )
     
-        if len(self.activity_detection_channels):
+        if len(self.activity_controlled_channels):
             self.connect( (self.fft, 0), (self.activity_controlled_channelizer, 0) )
             if msgoutput:
                 self.msg_connect( self.activity_controlled_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
+        
+        if len(self.activity_detection_segments):
+            self.connect( (self.fft, 0), (self.activity_detection_channelizer, 0) )
+            if msgoutput:
+                self.msg_connect( self.activity_detection_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
         
         
     
@@ -209,4 +286,24 @@ class FrequencyDomainChannelizer(gr.hier_block2):
     def get_channel(self,c):
         if not isinstance(c, (list, tuple)) or len(c)!=2:
             return None
-        return [self.get_freq(c[0]) - self.get_bw(c[1])/2.0,self.get_bw(c[1])]
+        return [self.get_freq(c[0]), self.get_bw(c[1])]
+    
+    def get_segment(self,c):
+        if not isinstance(c, (list, tuple)) or len(c)!=2:
+            return None
+        return [self.get_freq(c[0]), self.get_freq(c[1])]
+    
+    def log(self, s):
+        if self.verbose==VERBOSEMODE.LOGTOCONSOLE:
+            print(str(s))
+        elif self.verbose==VERBOSEMODE.LOGTOFILE:
+            self.logtofile(s)
+    
+    def logtofile(self, s, end='\n'):
+        if not hasattr( self, 'logfile' ):
+            self.logfile=os.path.expanduser('~')+'/'+'gr-FDC.FreqDomChan.'+time.asctime().replace(' ','_')+'.log'
+        if not os.path.isfile(self.logfile):
+            with open(self.logfile,'w') as fh:
+                fh.write('\n')
+        with open( self.logfile, 'a' ) as fh:
+            fh.write( str(s)+str(end) )

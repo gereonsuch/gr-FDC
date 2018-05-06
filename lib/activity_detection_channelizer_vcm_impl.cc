@@ -82,16 +82,16 @@ std::string get_current_time(){
 
 
 activity_detection_channelizer_vcm::sptr
-activity_detection_channelizer_vcm::make(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer)
+activity_detection_channelizer_vcm::make(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int verbose)
 {
     return gnuradio::get_initial_sptr
-            (new activity_detection_channelizer_vcm_impl(v_blocklen, v_segments, v_thresh, v_relinvovl, v_maxblocks, v_message, v_fileoutput, v_path, v_threads, v_minchandist, v_channel_deactivation_delay, v_window_flank_puffer));
+            (new activity_detection_channelizer_vcm_impl(v_blocklen, v_segments, v_thresh, v_relinvovl, v_maxblocks, v_message, v_fileoutput, v_path, v_threads, v_minchandist, v_channel_deactivation_delay, v_window_flank_puffer, verbose));
 }
 
 /*
      * The private constructor
      */
-activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer)
+activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int verbose)
     : gr::sync_block("activity_detection_channelizer_vcm",
                      gr::io_signature::make(1, 1, sizeof(gr_complex)*v_blocklen),
                      //gr::io_signature::make(1, 1, sizeof(float)*( v_blocklen<4096?v_blocklen:4096 )))
@@ -137,7 +137,7 @@ activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl
     //setting up message port
     msg=v_message;
     if(msg){
-        outport=pmt::intern("msgport");
+        outport=pmt::intern("msgout");
         message_port_register_out(outport);
     }
 

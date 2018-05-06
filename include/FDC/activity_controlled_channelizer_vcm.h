@@ -46,7 +46,7 @@ namespace gr {
        * class. FDC::activity_controlled_channelizer_vcm::make is the public interface for
        * creating new instances.
        */
-      static sptr make(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded);
+      static sptr make(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int verbose);
     };
 
   } // namespace FDC
