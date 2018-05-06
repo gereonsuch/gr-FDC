@@ -106,7 +106,11 @@ public:
 
 };
 
-
+enum VERBOSE{
+    NOLOG=0,
+    LOGTOCONSOLE=1,
+    LOGTOFILE=2
+};
 
 class activity_detection_channelizer_vcm_impl : public activity_detection_channelizer_vcm
 {
@@ -127,6 +131,8 @@ private:
     std::string path;
     int chan_detection_decimation_factor;
     bool threading;
+    VERBOSE verbose;
+    std::string logfile;
 
     void (activity_detection_channelizer_vcm_impl::*detect_channels_in_segments)(const gr_complex *);
     void (activity_detection_channelizer_vcm_impl::*extract_channels_in_segments)(const gr_complex *, const gr_complex *);
@@ -152,9 +158,11 @@ private:
 
     void fftshift(gr_complex *in, gr_complex *out, int sz);
 
+    void log(std::string &s);
+
 
 public:
-    activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int verbose);
+    activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int v_verbose);
     ~activity_detection_channelizer_vcm_impl();
 
     // Where all the action really happens

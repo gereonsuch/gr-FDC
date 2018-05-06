@@ -30,16 +30,8 @@ namespace FDC {
 
 const char* debugfile = "/home/gereon/debug_actdetchan.py";
 
-void logtofile(const char* txt){
-    FILE *f = fopen(debugfile, "a");
-    fputs(txt, f);
-    fclose(f);
-}
-void logtofile(std::string &s){
-    FILE *f = fopen(debugfile, "a");
-    fputs(s.c_str(), f);
-    fclose(f);
-}
+
+
 template <typename T>
 std::string num2str(T k){
     std::ostringstream s;
@@ -91,12 +83,29 @@ activity_detection_channelizer_vcm::make(int v_blocklen, std::vector< std::vecto
 /*
      * The private constructor
      */
-activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int verbose)
+activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl(int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, int v_channel_deactivation_delay, double v_window_flank_puffer, int v_verbose)
     : gr::sync_block("activity_detection_channelizer_vcm",
                      gr::io_signature::make(1, 1, sizeof(gr_complex)*v_blocklen),
                      //gr::io_signature::make(1, 1, sizeof(float)*( v_blocklen<4096?v_blocklen:4096 )))
                      gr::io_signature::make(0, 0, 0 ))
 {
+    //init log(file)
+    if(v_verbose==(int) LOGTOCONSOLE)
+        verbose = LOGTOCONSOLE;
+    else if(v_verbose==(int) LOGTOFILE){
+        verbose = LOGTOFILE;
+        //'gr-FDC.FreqDomChan.'+time.asctime().replace(' ','_')+'.log'
+        logfile=std::string("gr-FDC.ActDetChan.log");
+        FILE *f=fopen(logfile.c_str(), "a");
+        if(!f)
+            std::cerr << "Logfile not writable: " << logfile << std::endl;
+        else
+            fwrite("\n", sizeof(char), 1, f);
+        fclose(f);
+    }else
+        verbose = NOLOG;
+
+
     //plausibility and setting up blocklen.
     if(v_blocklen<2 || !ispow2(v_blocklen))
         throw std::invalid_argument("Blocklen invalid. ");
@@ -174,14 +183,16 @@ activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl
     fputs("poss_chans=[] \n\n", f);
     fclose(f);
 
-    for(segment &seg: segments){
-        std::cout << "Segment " << seg.ID << ": " << std::endl
-                  << "start: " << seg.start << " => f_start=" << (double)seg.start/(double)blocklen << std::endl
-                  << "stop: " << seg.stop << " => f_stop=" << (double)seg.stop/(double)blocklen << std::endl
-                  << "width: " << seg.width << " => f_bw=" << (double)seg.width/(double)blocklen << std::endl
-                  << "chan_decimation_fact: " << seg.chan_detection_decimation_factor << std::endl;
-        std::string s=std::string("chan_detection_decimation_factor=")+num2str(seg.chan_detection_decimation_factor)+std::string("\n\n");
-        logtofile(s);
+    if(verbose){
+        for(segment &seg: segments){
+            std::string s("# Segment ");
+            s+=num2str(seg.ID) + std::string(": \n");
+            s+=std::string("# start: ") + num2str(seg.start) + std::string(" => f_start=") + num2str((double)seg.start/(double)blocklen) + std::string("\n");
+            s+=std::string("# stop: ") + num2str(seg.stop) + std::string(" => f_stop=") + num2str((double)seg.stop/(double)blocklen) + std::string("\n");
+            s+=std::string("# width: ") + num2str(seg.width) + std::string(" => f_bw=") + num2str((double)seg.width/(double)blocklen) + std::string("\n");
+            s+=std::string("# chan_decimation_fact: ") + num2str(seg.chan_detection_decimation_factor) + std::string("\n");
+            log(s);
+        }
     }
 
 }
@@ -436,7 +447,12 @@ void activity_detection_channelizer_vcm_impl::emit_channel(active_channel &c, se
 
     //channel is erased in other method.
 
-    std::cout << "Seg " << seg.ID << ":\t final emission of \t" << c.ID <<  std::endl;
+    if(verbose){
+        std::string s("Seg ");
+        s+=num2str(seg.ID) + std::string(":\t final emission of \t")+num2str(c.ID);
+        log(s);
+    }
+
 }
 
 void activity_detection_channelizer_vcm_impl::emit_unfinished_channel(active_channel &c, segment &seg){
@@ -479,7 +495,12 @@ void activity_detection_channelizer_vcm_impl::emit_unfinished_channel(active_cha
 
     c.part++;
 
-    std::cout << "Seg " << seg.ID << ":\t emitting unfinished \t" << c.ID <<  std::endl;
+    if(verbose){
+        std::string s("Seg ");
+        s+=num2str(seg.ID) + std::string(":\t emitting unfinished \t")+num2str(c.ID);
+        log(s);
+    }
+
 }
 
 void activity_detection_channelizer_vcm_impl::clear_inactive_channels(){
@@ -489,8 +510,14 @@ void activity_detection_channelizer_vcm_impl::clear_inactive_channels(){
         i=0;
         while(i<seg.active_channels.size()){
             if( (seg.active_channels.begin()+i)->inactive > channel_deactivation_delay ){
-                std::cout << "Seg " << seg.ID << ":\t Erasing channel " << (seg.active_channels.begin()+i)->ID <<" \t " << (seg.active_channels.begin()+i)->detect_start
-                          << ", " << (seg.active_channels.begin()+i)->detect_stop << std::endl;
+
+                if(verbose){
+                    std::string s("Seg ");
+                    s+=num2str(seg.ID) + std::string(":\t Erasing channel ") + num2str((seg.active_channels.begin()+i)->ID);
+                    s+=std::string(" \t ") + num2str((seg.active_channels.begin()+i)->detect_start) + std::string(", ") + num2str((seg.active_channels.begin()+i)->detect_stop);
+                    log(s);
+                }
+
                 seg.active_channels.erase( seg.active_channels.begin()+i );
             }else
                 i++;
@@ -548,7 +575,20 @@ activity_detection_channelizer_vcm_impl::work(int noutput_items,
     return noutput_items;
 }
 
-
+void activity_detection_channelizer_vcm_impl::log(std::string &s){
+    if(verbose==LOGTOCONSOLE)
+        std::cout << s << std::endl;
+    else if(verbose==LOGTOFILE){
+        FILE *f=fopen(logfile.c_str(), "a");
+        if(!f)
+            std::cerr << "Outputfile not writable: " << logfile << std::endl;
+        else{
+            s+=std::string("\n");
+            fwrite(s.c_str(), sizeof(char), s.size(), f);
+        }
+        fclose(f);
+    }
+}
 
 
 /*
@@ -578,24 +618,10 @@ void segment::detect_channels(const gr_complex *in, float thresh){
     //measure current power
     measure_power(in);
 
-    logtofile("P.append([");
-    for(float k:power){
-        std::string s=num2str(k)+std::string(", ");
-        logtofile(s);
-    }
-    logtofile("])\n\n");
-
     std::deque< std::array<int,2> > poss_chans;
 
     //detect all possible channels, wether or not already active
     get_active_channels(poss_chans, thresh);
-
-    logtofile("poss_chans.append([");
-    for(std::array<int,2> &pc: poss_chans){
-        std::string s=std::string("(")+num2str(pc[0]-start)+std::string(",")+num2str(pc[1]-start)+std::string("),");
-        logtofile(s);
-    }
-    logtofile("])\n\n");
 
     //compare with active channels, activate and deactivate them.
     match_active_channels(poss_chans);
@@ -736,7 +762,7 @@ void segment::activate(int detect_start, int detect_end){
 
     active_channels.push_back( c );
 
-    std::cout << "Seg " << ID << ":\t activated channel " << c.ID << " \t " << detect_start << ", " << detect_end << ", " << extract_start << std::endl;
+    //std::cout << "Seg " << ID << ":\t activated channel " << c.ID << " \t " << detect_start << ", " << detect_end << ", " << extract_start << std::endl;
 }
 
 

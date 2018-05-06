@@ -125,13 +125,28 @@ std::string channel::get_msg_ID(){
 /*
      * The private constructor
      */
-activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int verbose)
+activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int v_verbose)
     : gr::sync_block("activity_controlled_channelizer_vcm",
                      gr::io_signature::make(1, 1, sizeof(gr_complex)*blocklen),
                      //gr::io_signature::make(1, 1, sizeof(gr_complex)))
                      gr::io_signature::make(0, 0, 0))
 {
-    veclen=blocklen;
+    if(v_verbose==(int) LOGTOCONSOLE)
+        verbose = LOGTOCONSOLE;
+    else if(v_verbose==(int) LOGTOFILE){
+        verbose = LOGTOFILE;
+        //'gr-FDC.FreqDomChan.'+time.asctime().replace(' ','_')+'.log'
+        logfile=std::string("gr-FDC.ActContrChan.log");
+        FILE *f=fopen(logfile.c_str(), "a");
+        if(!f)
+            std::cerr << "Logfile not writable: " << logfile << std::endl;
+        else
+            fwrite("\n", sizeof(char), 1, f);
+        fclose(f);
+    }else
+        verbose = NOLOG;
+
+    veclen = blocklen;
     if(veclen<=0)
         throw std::invalid_argument(std::string("Invalid blocklen: ")+std::to_string(veclen)+std::string("\n"));
 
@@ -325,6 +340,19 @@ void activity_controlled_channelizer_vcm_impl::tx_data(channel &c){
 
     //update channel data
     c.part++;
+}
+
+void activity_controlled_channelizer_vcm_impl::log(std::string &s){
+    if(verbose==LOGTOCONSOLE)
+        std::cout << s << std::endl;
+    else if(verbose==LOGTOFILE){
+        FILE *f=fopen(logfile.c_str(), "a");
+        if(!f)
+            std::cerr << "Outputfile not writable: " << logfile << std::endl;
+        else
+            fwrite(s.c_str(), sizeof(char), s.size(), f);
+        fclose(f);
+    }
 }
 
 

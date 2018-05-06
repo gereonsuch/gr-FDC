@@ -301,7 +301,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
     
     def logtofile(self, s, end='\n'):
         if not hasattr( self, 'logfile' ):
-            self.logfile=os.path.expanduser('~')+'/'+'gr-FDC.FreqDomChan.'+time.asctime().replace(' ','_')+'.log'
+            self.logfile='gr-FDC.FreqDomChan.log'
         if not os.path.isfile(self.logfile):
             with open(self.logfile,'w') as fh:
                 fh.write('\n')

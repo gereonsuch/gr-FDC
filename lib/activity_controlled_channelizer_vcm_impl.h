@@ -105,9 +105,13 @@ private:
     pmt::pmt_t msgport;
     bool threading;
     int channelcounter;
+    VERBOSE verbose;
+    std::string logfile;
+
+    void log(std::string &s);
 
 public:
-    activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int verbose);
+    activity_controlled_channelizer_vcm_impl(int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, bool message, bool fileoutput, std::string path, bool threaded, int v_verbose);
     ~activity_controlled_channelizer_vcm_impl();
 
     void joinall();
