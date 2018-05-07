@@ -723,7 +723,7 @@ void segment::activate(int detect_start, int detect_end){
     int extract_mid=detect_start + detect_width/2;
     int extract_width=nextpow2( (int) ceil((double)detect_width * (1.0+2.0*window_flank_puffer)) );
 
-    if(extract_width>=blocklen){
+    if(extract_width>blocklen){
         std::string s=std::string("channel width exceeds blocklen. start=") + num2str(detect_start) +
                 std::string(", end=") + num2str(detect_end) +
                 std::string(", width=")+ num2str(detect_width)+
