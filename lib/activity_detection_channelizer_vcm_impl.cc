@@ -96,7 +96,7 @@ activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl
         verbose = LOGTOFILE;
         //'gr-FDC.FreqDomChan.'+time.asctime().replace(' ','_')+'.log'
         logfile=std::string("gr-FDC.ActDetChan.log");
-        FILE *f=fopen(logfile.c_str(), "a");
+        FILE *f=fopen(logfile.c_str(), "w");
         if(!f)
             std::cerr << "Logfile not writable: " << logfile << std::endl;
         else
@@ -194,6 +194,8 @@ activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl
             log(s);
         }
     }
+
+    blockcount=0;
 
 }
 
@@ -448,8 +450,11 @@ void activity_detection_channelizer_vcm_impl::emit_channel(active_channel &c, se
     //channel is erased in other method.
 
     if(verbose){
-        std::string s("Seg ");
-        s+=num2str(seg.ID) + std::string(":\t final emission of \t")+num2str(c.ID);
+        std::string s=c.msg_ID+std::string(".fin: ");
+        s+=std::string("start=")+num2str(c.extract_start)+
+                std::string(", stop=")+num2str(c.extract_stop)+
+                std::string(", blockstart=")+num2str(blockcount-c.count)+
+                std::string(", blockend=")+num2str(blockcount);
         log(s);
     }
 
@@ -496,8 +501,12 @@ void activity_detection_channelizer_vcm_impl::emit_unfinished_channel(active_cha
     c.part++;
 
     if(verbose){
-        std::string s("Seg ");
-        s+=num2str(seg.ID) + std::string(":\t emitting unfinished \t")+num2str(c.ID);
+        std::string s=c.msg_ID+std::string(".part: ");
+        s+=std::string("start=")+num2str(c.extract_start)+
+                std::string(", stop=")+num2str(c.extract_stop)+
+                std::string(", part=")+num2str(c.part)+
+                std::string(", blockstart=")+num2str(blockcount-c.count)+
+                std::string(", blockend=")+num2str(blockcount);
         log(s);
     }
 
@@ -510,14 +519,6 @@ void activity_detection_channelizer_vcm_impl::clear_inactive_channels(){
         i=0;
         while(i<seg.active_channels.size()){
             if( (seg.active_channels.begin()+i)->inactive > channel_deactivation_delay ){
-
-                if(verbose){
-                    std::string s("Seg ");
-                    s+=num2str(seg.ID) + std::string(":\t Erasing channel ") + num2str((seg.active_channels.begin()+i)->ID);
-                    s+=std::string(" \t ") + num2str((seg.active_channels.begin()+i)->detect_start) + std::string(", ") + num2str((seg.active_channels.begin()+i)->detect_stop);
-                    log(s);
-                }
-
                 seg.active_channels.erase( seg.active_channels.begin()+i );
             }else
                 i++;
@@ -566,6 +567,8 @@ activity_detection_channelizer_vcm_impl::work(int noutput_items,
 
         //finally iterate history pointer
         sig_hist=sig;
+
+        blockcount++;
     }
 
     //saving last block to history puffer

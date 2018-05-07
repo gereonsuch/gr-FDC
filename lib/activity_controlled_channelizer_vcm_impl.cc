@@ -137,7 +137,7 @@ activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_im
         verbose = LOGTOFILE;
         //'gr-FDC.FreqDomChan.'+time.asctime().replace(' ','_')+'.log'
         logfile=std::string("gr-FDC.ActContrChan.log");
-        FILE *f=fopen(logfile.c_str(), "a");
+        FILE *f=fopen(logfile.c_str(), "w");
         if(!f)
             std::cerr << "Logfile not writable: " << logfile << std::endl;
         else
@@ -164,6 +164,8 @@ activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_im
     fileout = fileoutput;
 
     outputpath = path;
+
+    blockcount=0;
 
     chans.reserve(channels.size());
     channelcounter=0;
@@ -192,7 +194,15 @@ activity_controlled_channelizer_vcm_impl::activity_controlled_channelizer_vcm_im
 
         chans.push_back(channel(channelcounter++, start, width, width - width/relovl, relovl));
 
-        std::cout << "# Init Chan " << chans[chans.size()-1].ID << ": f=" << chans[chans.size()-1].start << ", size=" << chans[chans.size()-1].size << std::endl;
+        //std::cout << "# Init Chan " << chans[chans.size()-1].ID << ": f=" << chans[chans.size()-1].start << ", size=" << chans[chans.size()-1].size << std::endl;
+        if(verbose){
+            std::string s("# Init Chan ");
+            s+=chans[chans.size()-1].msgID + std::string(": ") +
+                    std::string("start=") + std::to_string(chans[chans.size()-1].start) +
+                    std::string(", size=") + std::to_string(chans[chans.size()-1].size);
+            log(s);
+        }
+
     }
 
     hist.resize(veclen, gr_complex(0.0,0.0));
@@ -227,6 +237,8 @@ activity_controlled_channelizer_vcm_impl::work(int noutput_items,
     //continue with every previous block from input
     for(int i=1;i<noutput_items;i++){
         (this->*(check_channels))(in + (i-1)*veclen, in + i*veclen);
+
+        blockcount++;
     }
 
 
@@ -241,11 +253,11 @@ void activity_controlled_channelizer_vcm_impl::check_channels_singlethread(const
         if(c.set_power(curblock + c.start, threshold)){
             //true if state changed(active<->inactive)
             if(c.active){
-                std::cout << "# Chan " << c.ID << "activated" << std::endl;
+                //std::cout << "# Chan " << c.ID << "activated" << std::endl;
                 //just activated
                 get_channel_data_hist(lastblock+c.start, curblock+c.start, c);
             }else{
-                std::cout << "# Chan " << c.ID << "deactivated" << std::endl;
+                //std::cout << "# Chan " << c.ID << "deactivated" << std::endl;
                 //just deactivated
                 tx_data(c);
             }
@@ -269,11 +281,11 @@ void activity_controlled_channelizer_vcm_impl::check_channels_multithread(const 
         if(c.set_power(curblock + c.start, threshold)){
             //true if state changed(active<->inactive)
             if(c.active){
-                std::cout << "# Chan " << c.ID << "activated" << std::endl;
+                //std::cout << "# Chan " << c.ID << "activated" << std::endl;
                 //just activated
                 threads.push_back( std::thread(get_channel_data_hist, lastblock+c.start, curblock+c.start, std::ref(c)) );
             }else{
-                std::cout << "# Chan " << c.ID << "deactivated" << std::endl;
+                //std::cout << "# Chan " << c.ID << "deactivated" << std::endl;
                 //just deactivated
                 threads.push_back( std::thread(&activity_controlled_channelizer_vcm_impl::tx_data, this, std::ref(c)) );
             }
@@ -335,6 +347,17 @@ void activity_controlled_channelizer_vcm_impl::tx_data(channel &c){
         else
             fwrite(d.data(), sizeof(gr_complex), d.size(), f);
         fclose(f);
+    }
+
+    if(verbose){
+        std::string s=c.msgID+(c.active?std::string(".part: "):std::string(".fin: "));
+        s+=std::string("start=")+std::to_string(c.start)+
+                std::string(", stop=")+std::to_string(c.start+c.size)+
+                (c.active?std::string(", part=")+std::to_string(c.part):std::string(""))
+                +std::string(", blockstart=")+std::to_string(blockcount-c.count)+
+                std::string(", blockend=")+std::to_string(blockcount)+
+                std::string("\n");
+        log(s);
     }
 
 

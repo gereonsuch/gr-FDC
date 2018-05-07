@@ -107,6 +107,7 @@ private:
     int channelcounter;
     VERBOSE verbose;
     std::string logfile;
+    unsigned int blockcount;
 
     void log(std::string &s);
 

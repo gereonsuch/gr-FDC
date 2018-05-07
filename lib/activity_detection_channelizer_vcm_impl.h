@@ -133,6 +133,7 @@ private:
     bool threading;
     VERBOSE verbose;
     std::string logfile;
+    unsigned int blockcount;
 
     void (activity_detection_channelizer_vcm_impl::*detect_channels_in_segments)(const gr_complex *);
     void (activity_detection_channelizer_vcm_impl::*extract_channels_in_segments)(const gr_complex *, const gr_complex *);
