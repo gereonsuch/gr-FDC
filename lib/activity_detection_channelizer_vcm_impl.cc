@@ -195,7 +195,7 @@ activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl
         }
     }
 
-    blockcount=0;
+    blockcount=1;
 
 }
 

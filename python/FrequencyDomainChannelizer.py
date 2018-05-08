@@ -233,8 +233,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             
         
         if self.verbose:
-            self.abssqr=blocks.complex_to_mag_squared(self.blocksize)
-            self.debugsink=blocks.file_sink(gr.sizeof_float*self.blocksize, 'gr-FDC.FreqDomChan.debugOutput.c64'.format(self.blocksize), False)
+            self.debugsink=blocks.file_sink(gr.sizeof_gr_complex*self.blocksize, 'gr-FDC.FreqDomChan.debugOutput.c64', False)
             self.debugsink.set_unbuffered(False)
         
         
@@ -264,8 +263,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
                 self.msg_connect( self.activity_detection_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
         
         if self.verbose:
-            self.connect( (self.fft, 0), (self.abssqr, 0) )
-            self.connect( (self.abssqr, 0), (self.debugsink, 0) )
+            self.connect( (self.fft,0), (self.debugsink,0) )
         
         
     
