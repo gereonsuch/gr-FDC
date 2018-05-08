@@ -234,7 +234,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         if self.verbose:
             self.abssqr=blocks.complex_to_mag_squared(self.blocksize)
-            self.debugsink=blocks.file_sink(gr.sizeof_gr_complex*self.blocksize, 'gr-FDC.FreqDomChan.debugOutput.c64'.format(self.blocksize), False)
+            self.debugsink=blocks.file_sink(gr.sizeof_float*self.blocksize, 'gr-FDC.FreqDomChan.debugOutput.c64'.format(self.blocksize), False)
             self.debugsink.set_unbuffered(False)
         
         
