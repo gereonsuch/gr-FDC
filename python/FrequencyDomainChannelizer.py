@@ -43,9 +43,21 @@ class FrequencyDomainChannelizer(gr.hier_block2):
     """
     docstring for block FrequencyDomainChannelizer
     """
-    def __init__(self, inptype, blocksize, relinvovl, throughput_channels, activity_controlled_channels, act_contr_threshold, fs, centerfrequency, freqmode, windowtype, msgoutput, fileoutput, outputpath, threaded, activity_detection_segments, act_det_threshold, minchandist, deactivation_delay, minchanflankpuffer, verbose):
+    def __init__(self, inptype, blocksize, relinvovl, 
+                 throughput_channels, 
+                 activity_controlled_channels, 
+                 act_contr_threshold, 
+                 fs, centerfrequency, freqmode, 
+                 windowtype, 
+                 msgoutput, fileoutput, outputpath, 
+                 threaded, 
+                 
+                 activity_detection_segments, act_det_threshold, minchandist, 
+                 act_det_deactivation_delay, minchanflankpuffer, verbose,
+                 pow_act_deactivation_delay,
+                 pow_act_maxblocks, act_det_maxblocks):
         #from GRC
-        #$type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $deactivation_delay, $minchanflankpuffer, $verbose
+        #$type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks
         
         self.verbose=int(verbose)
         self.itemsize=inptype
@@ -202,8 +214,8 @@ class FrequencyDomainChannelizer(gr.hier_block2):
                                                              bw, 
                                                              self.relinvovl, 
                                                              float(act_contr_threshold),
-                                                             64,
-                                                             int(deactivation_delay) if int(deactivation_delay)>=0 else 0,
+                                                             int(pow_act_maxblocks),
+                                                             int(pow_act_deactivation_delay) if int(pow_act_deactivation_delay)>=0 else 0,
                                                              bool(msgoutput),
                                                              bool(fileoutput),
                                                              str(outputpath), 
@@ -224,13 +236,13 @@ class FrequencyDomainChannelizer(gr.hier_block2):
                                                                                    self.activity_detection_segments, 
                                                                                    float(act_det_threshold), 
                                                                                    self.relinvovl, 
-                                                                                   64, 
+                                                                                   int(act_det_maxblocks), 
                                                                                    bool(msgoutput), 
                                                                                    bool(fileoutput), 
                                                                                    str(outputpath), 
                                                                                    bool(threaded),
                                                                                    float(minchandist),
-                                                                                   int(deactivation_delay) if int(deactivation_delay)>=0 else 0,
+                                                                                   int(act_det_deactivation_delay) if int(act_det_deactivation_delay)>=0 else 0,
                                                                                    float(minchanflankpuffer) if 0.0<=float(minchanflankpuffer) else 0.2,
                                                                                    self.verbose)
             #int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, 

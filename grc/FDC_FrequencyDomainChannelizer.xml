@@ -4,14 +4,14 @@
   <key>FDC_FrequencyDomainChannelizer</key>
   <category>[FDC]</category>
   <import>import FDC</import>
-  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $deactivation_delay, $minchanflankpuffer, $verbose)</make>
+  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks)</make>
   
 
   <param_tab_order>
     <tab>General</tab>
-    <tab>Throughput channels</tab>
-    <tab>Activity controlled</tab>
-    <tab>Activity detection</tab>
+    <tab>Throughput</tab>
+    <tab>FixedCarrier</tab>
+    <tab>Detection</tab>
   </param_tab_order>
 
 
@@ -188,7 +188,7 @@
 			<name>Ramp</name>
 			<key>2</key>
 		</option>
-		<tab>Throughput channels</tab>
+		<tab>Throughput</tab>
 	</param>
 	
 	<param>
@@ -196,7 +196,7 @@
 	<key>throughput_channels</key>
 	<value>[ [0.2, 0.05], [0.4,0.05], [0.6,0.05] ]</value>
 	<type>raw</type>
-	<tab>Throughput channels</tab>
+	<tab>Throughput</tab>
 	</param>
 	
 	
@@ -204,31 +204,13 @@
 	
 	
 	<!-- ###Activity controlled### -->
-  <param>
-		<name>Window</name>
-		<key>windowtype_activity</key>
-		<type>enum</type>
-		<option>
-			<name>Rectangular</name>
-			<key>0</key>
-		</option>
-		<option>
-			<name>HANN</name>
-			<key>1</key>
-		</option>
-		<option>
-			<name>Ramp</name>
-			<key>2</key>
-		</option>
-		<tab>Activity controlled</tab>
-	</param>
-	
+  
 	<param>
 	<name>Channels</name>
 	<key>activity_controlled_channels</key>
 	<value>[ [0.2, 0.05], [0.4,0.05], [0.6,0.05] ]</value>
 	<type>raw</type>
-	<tab>Activity controlled</tab>
+	<tab>FixedCarrier</tab>
 	</param>
 	
 	<param>
@@ -236,20 +218,26 @@
 	<key>act_contr_threshold</key>
 	<value>6</value>
 	<type>float</type>
-	<tab>Activity controlled</tab>
+	<tab>FixedCarrier</tab>
 	</param>
+	
 	
 	<param>
-	<name>Maximum active blocks</name>
-	<key>maxactiveblocks</key>
-	<value>128</value>
-	<type>int</type>
-	<tab>Activity controlled</tab>
-	</param>
+    <name>Deactivation delay</name>
+    <key>pow_act_deactivation_delay</key>
+    <value>1</value>
+    <type>int</type>
+    <tab>FixedCarrier</tab>
+  </param>
 	
-	
-	
-	
+	<param>
+    <name>Max active blocks</name>
+    <key>pow_act_maxblocks</key>
+    <value>128</value>
+    <type>int</type>
+    <tab>FixedCarrier</tab>
+  </param>
+  
 	
   
   
@@ -260,7 +248,7 @@
 	<key>activity_detection_segments</key>
 	<value>[ [0.1, 0.2], [0.7, 0.9], ]</value>
 	<type>raw</type>
-	<tab>Activity detection</tab>
+	<tab>Detection</tab>
 	</param>
 	
 	<param>
@@ -268,7 +256,7 @@
 	<key>act_det_threshold</key>
 	<value>10</value>
 	<type>float</type>
-	<tab>Activity detection</tab>
+	<tab>Detection</tab>
 	</param>
 
   <param>
@@ -276,15 +264,7 @@
     <key>minchandist</key>
     <value>0.005</value>
     <type>float</type>
-    <tab>Activity detection</tab>
-  </param>
-  
-  <param>
-    <name>Deactivation delay</name>
-    <key>deactivation_delay</key>
-    <value>1</value>
-    <type>int</type>
-    <tab>Activity detection</tab>
+    <tab>Detection</tab>
   </param>
   
   <param>
@@ -292,8 +272,26 @@
     <key>minchanflankpuffer</key>
     <value>0.2</value>
     <type>float</type>
-    <tab>Activity detection</tab>
+    <tab>Detection</tab>
   </param>
+  
+  <param>
+    <name>Deactivation delay</name>
+    <key>act_det_deactivation_delay</key>
+    <value>1</value>
+    <type>int</type>
+    <tab>Detection</tab>
+  </param>
+  
+  <param>
+    <name>Max active blocks</name>
+    <key>act_det_maxblocks</key>
+    <value>128</value>
+    <type>int</type>
+    <tab>Detection</tab>
+  </param>
+  
+  
   
   
   
