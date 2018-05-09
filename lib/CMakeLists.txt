@@ -36,6 +36,7 @@ list(APPEND FDC_sources
     vector_cut_vxx_impl.cc
     activity_controlled_channelizer_vcm_impl.cc
     activity_detection_channelizer_vcm_impl.cc
+    PowerActivationChannel_impl.cc
 )
 
 set(FDC_sources "${FDC_sources}" PARENT_SCOPE)

@@ -132,7 +132,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
                                     None)
         #register message port if used
         if(msgoutput):
-            self.msgport="msgport"
+            self.msgport="msgout"
             self.message_port_register_hier_out(self.msgport)
                                     
                                     
