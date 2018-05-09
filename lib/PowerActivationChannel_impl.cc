@@ -44,14 +44,14 @@ PowerActivationChannel_impl::PowerActivationChannel_impl(int v_blocklen, float v
                      gr::io_signature::make(0, 0, 0))
 {
     //set channelizer ID
-    ID=str("gr-FDC.PowActChan.")+std::to_string(v_ID)+str(".");
+    ID=v_ID;
 
     //set debugging and logging output mode
     if(verbose==(int)LOGTOCONSOLE)
         verbosemode=LOGTOCONSOLE;
     else if(verbose==(int)LOGTOFILE){
         verbosemode=LOGTOFILE;
-        logfile=ID+str("log");
+        logfile=str("gr-FDC.PowActChan.")+std::to_string(ID)+str(".")+str("log");
         FILE *f=fopen(logfile.c_str(), "w");
         if(!f)
             std::cerr << "Logfile not writable: " << logfile << std::endl;
@@ -112,7 +112,7 @@ PowerActivationChannel_impl::PowerActivationChannel_impl(int v_blocklen, float v
 
     if(verbosemode){
         str s("############################\n\n");
-        s+=str("# ")+ID+str("\n\n")+s+
+        s+=str("# ")+str("gr-FDC.PowActChan.")+std::to_string(ID)+str("\n\n")+s+
                 str("# extract_start: ") + std::to_string(extract_start) + str("\n")+
                 str("# extract_stop: ") + std::to_string(extract_stop) + str("\n")+
                 str("# extract_width: ") + std::to_string(extract_width) + str("\n")+
@@ -151,13 +151,16 @@ PowerActivationChannel_impl::work(int noutput_items,
             //if true, state needs to be changed
             if(!active)
                 activate(sighist, sig);
-            else
+            else{
+                process_channel(sig); //last block needs to be processed
+
                 deactivate();
+            }
         }else if(active){
             //if true, channel is active and signal needs to be processed
             process_channel(sig);
 
-            if(count%maxblocks==0)
+            if(maxblocks==0 || (maxblocks>0 && count%maxblocks==0))
                 //if true, emit data before fin
                 emit_data(false);
         }
@@ -193,6 +196,7 @@ void PowerActivationChannel_impl::activate(const gr_complex *sighist, const gr_c
     active=true;
     phase=0;
     blocks.clear();
+    msgID=create_ID();
 
     //process previous and current block and append to block deque
     process_channel(sighist);
@@ -211,7 +215,7 @@ void PowerActivationChannel_impl::emit_data(bool fin){
 
     if(msg){ //emit channel data to msgport
         pmt::pmt_t dict = pmt::make_dict();
-        dict = pmt::dict_add(dict, pmt::intern("ID"), pmt::intern( ID+std::to_string(finished_channels)+(fin?str(".fin"):str(".part")) ));
+        dict = pmt::dict_add(dict, pmt::intern("ID"), pmt::intern( msgID+(fin?str(".fin"):str(".part")) ));
         dict = pmt::dict_add(dict, pmt::intern("finalized"), pmt::from_bool(fin));
         dict = pmt::dict_add(dict, pmt::intern("part"), pmt::from_long(part));
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double( (double)(extract_start+extract_width/2)/(double)blocklen ));
@@ -223,7 +227,7 @@ void PowerActivationChannel_impl::emit_data(bool fin){
 
     if(fileoutput){ //write channel data to file
         str filename=path+str("/")+   //path
-                ID+std::to_string(finished_channels)+(fin?str(".fin"):(str(".parted.")+std::to_string(part))); //ID-filename
+                msgID+(fin?str(".fin"):(str(".parted.")+std::to_string(part))); //ID-filename
         FILE* fh=fopen( filename.c_str(), "wb" );
         if(!fh)
             std::cerr << "Cannot write to file " << filename << std::endl; //dont want to throw errors here...
@@ -233,7 +237,7 @@ void PowerActivationChannel_impl::emit_data(bool fin){
     }
 
     if(verbosemode){
-        std::string s=ID+std::to_string(finished_channels)+(fin?str(".fin"):(str(".parted.")+std::to_string(part)))+str(": ");
+        std::string s=msgID+(fin?str(".fin"):(str(".parted.")+std::to_string(part)))+str(": ");
         s+=std::string("start=")+std::to_string(extract_start)+
                 std::string(", stop=")+std::to_string(extract_stop)+
                 std::string(", blockstart=")+std::to_string(blockcount-count)+
@@ -294,6 +298,11 @@ bool PowerActivationChannel_impl::measure_power(const gr_complex *in){
     return false;
 }
 
+std::string PowerActivationChannel_impl::create_ID(){
+    //convention for ID is timestamp.SRC.SEGMENTNUM.CONTNUM
+    str s=get_current_time() + str(".PowActChan.") + std::to_string(ID) + str(".") + std::to_string(finished_channels);
+    return s;
+}
 
 void PowerActivationChannel_impl::set_startstop(float cfreq, float bw){
     bw=bw>0.0f?bw:-bw; //abs(bw)
@@ -411,6 +420,21 @@ void PowerActivationChannel_impl::fftshift(const gr_complex *src, gr_complex *de
 
     memcpy(dest, src+sz2, sizeof(gr_complex)*sz2);
     memcpy(dest+sz2, src, sizeof(gr_complex)*sz2);
+}
+
+str PowerActivationChannel_impl::get_current_time(){
+    time_t rawtime;
+    struct tm * timeinfo;
+    char p[40];
+
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+
+    strftime (p,80,"%Y-%m-%d-%H-%M-%S",timeinfo);
+
+    str s(p);
+
+    return s;
 }
 
 } /* namespace FDC */

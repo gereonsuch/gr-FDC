@@ -22,7 +22,7 @@
 from gnuradio import gr
 from gnuradio import blocks
 from gnuradio import fft
-from FDC import overlap_save, phase_shifting_windowing_vcc, vector_cut_vxx, activity_controlled_channelizer_vcm, activity_detection_channelizer_vcm
+from FDC import overlap_save, phase_shifting_windowing_vcc, vector_cut_vxx, activity_detection_channelizer_vcm, PowerActivationChannel
 import numpy
 import pmt
 import os, time
@@ -195,18 +195,25 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         #create activity controlled channelizer if valid channels are present
         if len(self.activity_controlled_channels):
-            self.activity_controlled_channelizer=activity_controlled_channelizer_vcm(self.blocksize, 
-                                                                                     self.activity_controlled_channels, 
-                                                                                     float(act_contr_threshold), 
-                                                                                     self.relinvovl, 
-                                                                                     64, 
-                                                                                     bool(msgoutput), 
-                                                                                     bool(fileoutput), 
-                                                                                     str(outputpath), 
-                                                                                     bool(threaded),
-                                                                                     self.verbose)
-            #int blocklen, std::vector< std::vector< float > > channels, float thresh, int relinvovl, int maxblocks, 
-            #bool message, bool fileoutput, std::string path
+            self.PowerActChans=[None]*len(self.activity_controlled_channels)
+            for i,(cfreq, bw) in enumerate(self.activity_controlled_channels):
+                self.PowerActChans[i]=PowerActivationChannel(self.blocksize, 
+                                                             cfreq, 
+                                                             bw, 
+                                                             self.relinvovl, 
+                                                             float(act_contr_threshold),
+                                                             64,
+                                                             int(deactivation_delay) if int(deactivation_delay)>=0 else 0,
+                                                             bool(msgoutput),
+                                                             bool(fileoutput),
+                                                             str(outputpath), 
+                                                             self.verbose,
+                                                             i)
+           #int v_blocklen, float v_cfreq, float v_bw, int v_relinvovl, float v_thresh, int v_maxblocks, 
+           #int v_deactivation_delay, bool v_msg, bool v_fileoutput, std::string v_path, int verbose, int v_ID
+        
+        
+            
         
         
         
@@ -253,9 +260,11 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.connect( (self.throughput_channelizers[i][4], 0), (self, i) )
     
         if len(self.activity_controlled_channels):
-            self.connect( (self.fft, 0), (self.activity_controlled_channelizer, 0) )
-            if msgoutput:
-                self.msg_connect( self.activity_controlled_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
+            for i in range(len(self.PowerActChans)):
+                self.connect( (self.fft, 0), (self.PowerActChans[i], 0) )
+                if msgoutput:
+                    self.msg_connect( self.PowerActChans[i], pmt.intern("msgout"), self, pmt.intern(self.msgport) )
+            
         
         if len(self.activity_detection_segments):
             self.connect( (self.fft, 0), (self.activity_detection_channelizer, 0) )

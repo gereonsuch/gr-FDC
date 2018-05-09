@@ -35,6 +35,7 @@
 #include <iostream>
 #include <limits>
 #include <stdlib.h>
+#include <ctime>
 
 
 namespace gr {
@@ -79,7 +80,8 @@ private:
     int deltaphase;
 
     //output parameters
-    str ID;
+    int ID;
+    str msgID;
     int part;
     int finished_channels;
     bool msg;
@@ -96,6 +98,7 @@ private:
     void set_startstop(float cfreq, float bw);
     void cr_windows();
     void set_thresh(float v_thresh);
+    str create_ID();
 
     //dsp methods
     bool measure_power(const gr_complex *sig);
@@ -109,6 +112,7 @@ private:
     void log(str s);
     bool ispow2(int k);
     int nextpow2(int k);
+    str get_current_time();
     void fftshift(const gr_complex *src, gr_complex *dest, int sz);
 
 public:
