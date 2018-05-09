@@ -35,6 +35,8 @@
 #include <exception>
 #include <limits>
 #include <ctime>
+#include <utility>
+#include <algorithm>
 
 #include <iostream>
 #include <stdlib.h>
@@ -70,6 +72,10 @@ struct active_channel{
     std::deque<std::vector<gr_complex> > data;
 };
 
+using fipair=std::pair<float, int>;
+bool fipair_sort(fipair &a, fipair &b){return a.first>b.first;}
+
+int get_next_int(int a, std::deque<int> &lst);
 
 template<typename T> int nextpow2(T v);
 template<typename T> int lastpow2(T v);
@@ -101,7 +107,7 @@ public:
     void get_active_channels(std::deque< std::array<int,2> > &poss_chans, float thresh);
     void match_active_channels(std::deque< std::array<int,2> > &poss_chans);
 
-    void activate(int detect_start, int detect_end);
+    bool activate(int detect_start, int detect_end);
     //void deactivate(int id);
 
 };

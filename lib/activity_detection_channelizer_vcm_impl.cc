@@ -652,7 +652,7 @@ void segment::measure_power(const gr_complex *in){
 
 }
 
-void segment::get_active_channels(std::deque< std::array<int,2> > &poss_chans, float thresh){
+/*void segment::get_active_channels(std::deque< std::array<int,2> > &poss_chans, float thresh){
     bool active=false;
     int poss_start;
     float powerdiff;
@@ -676,6 +676,69 @@ void segment::get_active_channels(std::deque< std::array<int,2> > &poss_chans, f
         }
     }
 
+}*/
+
+int get_next_int(int a, std::deque<int> &lst){
+    //lst is sorted!
+    if(lst.size()==0)
+        return -1;
+
+    if(lst.front() > a)
+        return lst.front();
+
+    for(int k:lst)
+        if(k > a)
+            return k;
+
+    //no next bigger int found.
+    return -1;
+}
+
+void segment::get_active_channels(std::deque<std::array<int, 2> > &poss_chans, float thresh){
+    std::deque< fipair > riseedge;
+    std::deque< int > falledge; //no priorisation
+
+    float inversethresh=1.0f / thresh;
+    float powerdiff;
+
+    //calculate all powerdifferences and get possible rising and falling edges
+    for(int i=1;i<power.size();i++){
+        if(power[i-1] == 0.0f)
+            powerdiff=power[i] / std::numeric_limits<float>::min();
+        else
+            powerdiff=power[i] / power[i-1];
+
+        if(powerdiff > thresh) riseedge.push_back( {powerdiff, (i-1)*chan_detection_decimation_factor + start} );
+        if(powerdiff < inversethresh) falledge.push_back( i*chan_detection_decimation_factor + start );
+    }
+
+    //sort rising edges
+    std::sort(riseedge.begin(), riseedge.end(), fipair_sort);
+
+    int poss_start;
+    int next_end;
+    bool breaking=false;
+    while(riseedge.size()){
+        poss_start=riseedge.front().second;
+        riseedge.pop_front();
+        next_end=get_next_int(poss_start, falledge);
+
+        if(next_end<=poss_start)
+            continue; //discard if none found
+
+        breaking=false;
+        for(std::array<int, 2> &arr: poss_chans)
+            if( poss_start<arr[1] && next_end>=arr[0] ){
+                breaking=true;
+                break; //if overlapping with any, discard
+            }
+
+        if(breaking)
+            continue;
+
+        //no check failed, add it to poss_chans
+        poss_chans.push_back( {poss_start, next_end} );
+    }
 }
 
 void segment::match_active_channels(std::deque< std::array<int,2> > &poss_chans){
@@ -696,7 +759,7 @@ void segment::match_active_channels(std::deque< std::array<int,2> > &poss_chans)
             pc_start=poss_chans.begin()[i][0];
             pc_end=poss_chans.begin()[i][1];
 
-            if( (pc_start<=c.detect_start && pc_end>c.detect_stop) || (pc_start>=c.detect_start && pc_start<c.detect_stop) ){
+            if( pc_start<c.detect_stop && pc_end>=c.detect_start ){
                 //this possible channel is overlapping an already active channel.
                 c.inactive=0; //this channel is marked as active!
                 inactive=false;
@@ -711,11 +774,18 @@ void segment::match_active_channels(std::deque< std::array<int,2> > &poss_chans)
 
     //all remaining elements in poss_chans are new channels.
     //poss_chans is necessarily without overlapping possible channels.
-    for(std::array<int,2> &pc: poss_chans)
-        activate(pc[0], pc[1]);
+    if(poss_chans.size())
+        for(std::array<int,2> &pc: poss_chans)
+            if( !activate(pc[0], pc[1]) ){
+                //Error occured, give additional infos
+                std::cerr << "Possible Chans[ " << poss_chans.size() <<" ]: ";
+                for(std::array<int, 2> &arr: poss_chans)
+                    std::cerr << "[" << arr[0] << ", " << arr[1] << "], ";
+                std::cerr << std::endl;
+            }
 }
 
-void segment::activate(int detect_start, int detect_end){
+bool segment::activate(int detect_start, int detect_end){
     //Creates a new channel in the segment. Start and stop of channel may exceed the segment, since
     //the extraction flank exceeds the detection bandwidth.
 
@@ -729,7 +799,10 @@ void segment::activate(int detect_start, int detect_end){
                 std::string(", width=")+ num2str(detect_width)+
                 std::string("\nresulting in width=")+num2str(extract_width) +
                 std::string(" blocklen=")+num2str(blocklen)+std::string("\n\n");
-        throw std::invalid_argument(s.c_str());
+        //throw std::invalid_argument(s.c_str());
+        //instead of throwing an error, log everything here to cerr and skip this channel.
+        std::cerr << s << std::endl;
+        return false; //can be caught where it's called
     }
 
     int extract_start=extract_mid-extract_width/2;
@@ -766,6 +839,8 @@ void segment::activate(int detect_start, int detect_end){
     active_channels.push_back( c );
 
     //std::cout << "Seg " << ID << ":\t activated channel " << c.ID << " \t " << detect_start << ", " << detect_end << ", " << extract_start << std::endl;
+
+    return true;
 }
 
 
