@@ -170,6 +170,8 @@ PowerActivationChannel_impl::work(int noutput_items,
         blockcount++;
     }
 
+    save_hist(sig);
+
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }
@@ -179,6 +181,10 @@ PowerActivationChannel_impl::work(int noutput_items,
 
 
 //functionality methods
+
+void PowerActivationChannel_impl::save_hist(const gr_complex *sig){
+    memcpy(hist.data(), sig, sizeof(gr_complex)*blocklen);
+}
 
 void PowerActivationChannel_impl::deactivate(){
     active=false;

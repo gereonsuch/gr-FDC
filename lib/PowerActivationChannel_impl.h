@@ -108,6 +108,8 @@ private:
     void activate(const gr_complex *sighist, const gr_complex *sig);
     void deactivate();
 
+    void save_hist(const gr_complex *sig);
+
     //helping methods
     void log(str s);
     bool ispow2(int k);
