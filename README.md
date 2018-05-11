@@ -16,13 +16,19 @@ gr-FDC is unsuitable for Code division multiple access systems.
 
 If you found thism you propably know how to install a GnuRadio OOT Module:
 
-'''console
+'''bash
 $ git clone https://github.com/gereonsuch/gr-FDC.git
 $ cd gr-FDC
 $ mkdir build
 $ cd build
 $ cmake .. && make && sudo make install && sudo ldconfig
 '''
+
+## Usage
+
+Primarily, you should start by using the block FrequencyDomainChannelizer, as it is a Hier block containing all implemented functionality and adjusts parameters to your needs. The Python way. 
+
+Feel free to use other blocks seperately, but this will most likely not leed to any performance gain whatsoever, since the hier itself block only instanciates what is necessarily needed. 
 
 ## Disclaimer
 
