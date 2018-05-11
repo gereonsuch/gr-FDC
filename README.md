@@ -14,7 +14,7 @@ gr-FDC is unsuitable for Code division multiple access systems.
 
 ## Installation
 
-If you found thism you propably know how to install a GnuRadio OOT Module:
+If you found this you propably know how to install a GnuRadio OOT Module:
 
 ```console
 $ git clone https://github.com/gereonsuch/gr-FDC.git
