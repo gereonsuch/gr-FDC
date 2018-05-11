@@ -16,13 +16,13 @@ gr-FDC is unsuitable for Code division multiple access systems.
 
 If you found thism you propably know how to install a GnuRadio OOT Module:
 
-'''
+```console
 $ git clone https://github.com/gereonsuch/gr-FDC.git
 $ cd gr-FDC
 $ mkdir build
 $ cd build
 $ cmake .. && make && sudo make install && sudo ldconfig
-'''
+´´´
 
 ## Usage
 
