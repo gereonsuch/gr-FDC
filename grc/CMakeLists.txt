@@ -16,13 +16,11 @@
 # along with GNU Radio; see the file COPYING.  If not, write to
 # the Free Software Foundation, Inc., 51 Franklin Street,
 # Boston, MA 02110-1301, USA.
-
 install(FILES
     FDC_overlap_save.xml
     FDC_phase_shifting_windowing_vcc.xml
     FDC_vector_cut_vxx.xml
     FDC_FrequencyDomainChannelizer.xml
-    FDC_activity_controlled_channelizer_vcm.xml
     FDC_activity_detection_channelizer_vcm.xml
     FDC_PowerActivationChannel.xml DESTINATION share/gnuradio/grc/blocks
 )

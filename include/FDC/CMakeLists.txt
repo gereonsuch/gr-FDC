@@ -25,7 +25,6 @@ install(FILES
     overlap_save.h
     phase_shifting_windowing_vcc.h
     vector_cut_vxx.h
-    activity_controlled_channelizer_vcm.h
     activity_detection_channelizer_vcm.h
     PowerActivationChannel.h DESTINATION include/FDC
 )

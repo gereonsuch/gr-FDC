@@ -29,12 +29,10 @@ link_directories(${Boost_LIBRARY_DIRS}
 
 
 find_package(Threads REQUIRED)
-
 list(APPEND FDC_sources
     overlap_save_impl.cc
     phase_shifting_windowing_vcc_impl.cc
     vector_cut_vxx_impl.cc
-    activity_controlled_channelizer_vcm_impl.cc
     activity_detection_channelizer_vcm_impl.cc
     PowerActivationChannel_impl.cc
 )
