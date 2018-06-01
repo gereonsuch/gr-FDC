@@ -314,10 +314,6 @@ void activity_detection_channelizer_vcm_impl::detect_channels_in_segments_thread
 }
 
 void activity_detection_channelizer_vcm_impl::extract_channels_in_segments_singlethread(const gr_complex *lastblock, const gr_complex *curblock){
-    std::deque<struct active_channel>::iterator it;
-
-
-
     if(maxblocks>=0){
         for(segment &seg:segments){
             for(struct active_channel &c: seg.active_channels){
@@ -432,10 +428,11 @@ void activity_detection_channelizer_vcm_impl::emit_channel(active_channel &c, se
         dict = pmt::dict_add(dict, pmt::intern("finalized"), pmt::from_bool(true));
         if(c.part>0)
             dict = pmt::dict_add(dict, pmt::intern("part"), pmt::from_long(c.part)); //add part information if emitted previously
-        dict = pmt::dict_add(dict, pmt::intern("data"), pmt::init_c32vector( d.size(), d ));
         //add samprate, carrierfrequency, sps, ... if known.
+        dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_double((double)(c.extract_width)/(double)blocklen));
+        dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)blocklen));
 
-        message_port_pub(outport, dict);
+        message_port_pub(outport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
     }
     if(fileoutput){ //write channel data to file
         std::string filename=path+std::string("/")+c.msg_ID+std::string(".fin");
@@ -483,10 +480,12 @@ void activity_detection_channelizer_vcm_impl::emit_unfinished_channel(active_cha
         dict = pmt::dict_add(dict, pmt::intern("ID"), pmt::intern(c.msg_ID));
         dict = pmt::dict_add(dict, pmt::intern("finalized"), pmt::from_bool(false));
         dict = pmt::dict_add(dict, pmt::intern("part"), pmt::from_long(c.part));
-        dict = pmt::dict_add(dict, pmt::intern("data"), pmt::init_c32vector( d.size(), d ));
         //add samprate, carrierfrequency, sps, ... if known.
+        dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_double((double)(c.extract_width)/(double)blocklen));
+        dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)blocklen));
 
-        message_port_pub(outport, dict);
+        message_port_pub(outport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
+
     }
     if(fileoutput){ //write channel data to file
         std::string filename=path+std::string("/")+c.msg_ID+std::string(".parted.")+std::to_string(c.part);

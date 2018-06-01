@@ -224,11 +224,10 @@ void PowerActivationChannel_impl::emit_data(bool fin){
         dict = pmt::dict_add(dict, pmt::intern("ID"), pmt::intern( msgID+(fin?str(".fin"):str(".part")) ));
         dict = pmt::dict_add(dict, pmt::intern("finalized"), pmt::from_bool(fin));
         dict = pmt::dict_add(dict, pmt::intern("part"), pmt::from_long(part));
-        dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double( (double)(extract_start+extract_width/2)/(double)blocklen ));
+        dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double( (double)(extract_start+extract_stop)/2.0/(double)blocklen ));
         dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_long( (double)extract_width/(double)blocklen ));
-        dict = pmt::dict_add(dict, pmt::intern("data"), pmt::init_c32vector( d.size(), d ));
 
-        message_port_pub(msgport, dict);
+        message_port_pub(msgport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
     }
 
     if(fileoutput){ //write channel data to file

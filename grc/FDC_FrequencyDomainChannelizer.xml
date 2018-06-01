@@ -326,7 +326,7 @@
   <doc>
 ##PowerActivationChannelizer##
 
-Author: Gereon Such, gereonsuch@gmail.com
+Author and Copyright holder: Gereon Such, gereonsuch@gmail.com
 
 This is a hier block implementing a complete channelizer system for frequency/time domain/demand assigned multiple access multicarrier systems
 
