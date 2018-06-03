@@ -55,12 +55,15 @@ class FrequencyDomainChannelizer(gr.hier_block2):
                  activity_detection_segments, act_det_threshold, minchandist, 
                  act_det_deactivation_delay, minchanflankpuffer, verbose,
                  pow_act_deactivation_delay,
-                 pow_act_maxblocks, act_det_maxblocks):
+                 pow_act_maxblocks, act_det_maxblocks,
+                 
+                 debug):
         #from GRC
         #$type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks
         
         self.verbose=int(verbose)
         self.itemsize=inptype
+        self.debug=bool(debug)
         
         #all frequencies are stored normalized, thus we need conversion
         #maybe further distinction to real signals(though FFT is complex)
@@ -131,27 +134,39 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             raise ValueError('Activity detection segments are invalid. Exiting...')
         
         
-        #define output stream signature depending on throughput channels. 
+        self.blocksize=nextpow2(blocksize)
+        self.relinvovl=nextpow2(relinvovl)
+        self.ovllen=self.blocksize // self.relinvovl
+        self.inpblocklen=self.blocksize-self.ovllen
+        
+        
+        #define output stream signature depending on throughput channels and debug output. 
+        outsig=gr.io_signature(0, 0, 0)
+        
+        gr.hier_block2.__init__(self,
+                                "FreqDomChan",
+                                gr.io_signature_make(1, 1, self.itemsize),
+                                outsig)
+        
         if len(self.throughput_channels)>0:
-            gr.hier_block2.__init__(self,
-                                    "FreqDomChan",
-                                    gr.io_signature(1, 1, self.itemsize),
-                                    gr.io_signature(len(self.throughput_channels), len(self.throughput_channels), gr.sizeof_gr_complex))
-        else:
-            gr.hier_block2.__init__(self,
-                                    "FreqDomChan",
-                                    gr.io_signature(1, 1, self.itemsize),
-                                    None)
+            if self.debug:
+                outsig=gr.io_signature_make2(len(self.throughput_channels)+1, len(self.throughput_channels)+1, gr.sizeof_gr_complex*self.blocksize, gr.sizeof_gr_complex)
+            else:
+                outsig=gr.io_signature_make(len(self.throughput_channels), len(self.throughput_channels), gr.sizeof_gr_complex)
+        elif self.debug:
+            outsig=gr.io_signature_make(1, 1, gr.sizeof_gr_complex*self.blocksize)
+        
+        gr.hier_block2.__init__(self,
+                                "FreqDomChan",
+                                gr.io_signature_make(1, 1, self.itemsize),
+                                outsig)
+        
         #register message port if used
         if(msgoutput):
             self.msgport="msgout"
             self.message_port_register_hier_out(self.msgport)
                                     
                                     
-        self.blocksize=nextpow2(blocksize)
-        self.relinvovl=nextpow2(relinvovl)
-        self.ovllen=self.blocksize // self.relinvovl
-        self.inpblocklen=self.blocksize-self.ovllen
         
         
         
@@ -161,13 +176,14 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.log('\n' + '#'*32 + '\n')
             self.log('# gr-FDC Frequency Domain Channelizer Runtime Information')
             self.log('\n' + '#'*32 + '\n')
-            self.log('Blocksize  = {}'.format(self.blocksize))
-            self.log('Relinvovl  = {}'.format(self.relinvovl))
-            self.log('Ovllen     = {}'.format(self.ovllen))
-            self.log('MsgOutput  = {}'.format(msgoutput))
-            self.log('FileOutput = {}'.format(fileoutput))
-            self.log('Outputpath = {}'.format(outputpath))
-            self.log('Threaded   = {}'.format(threaded))
+            self.log('Blocksize     = {}'.format(self.blocksize))
+            self.log('Relinvovl     = {}'.format(self.relinvovl))
+            self.log('Ovllen        = {}'.format(self.ovllen))
+            self.log('MsgOutput     = {}'.format(msgoutput))
+            self.log('FileOutput    = {}'.format(fileoutput))
+            self.log('Outputpath    = {}'.format(outputpath))
+            self.log('Threaded      = {}'.format(threaded))
+            self.log('Debugoutput   = {}'.format(self.debug))
             self.log('\n' + '#'*32 + '\n')
             self.log('# Throughput channels:         {}'.format(str(self.throughput_channels)))
             self.log('# Activity control channels:   {}'.format(str(self.activity_controlled_channels)))
@@ -251,12 +267,6 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             
             
         
-        if self.verbose:
-            self.debugsink=blocks.file_sink(gr.sizeof_gr_complex*self.blocksize, 'gr-FDC.FreqDomChan.debugOutput.c64', False)
-            self.debugsink.set_unbuffered(False)
-        
-        
-        
         
         #define connections
         self.connect( (self,0), (self.inp_block_distr,0) )
@@ -269,7 +279,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.connect( (self.throughput_channelizers[i][1], 0), (self.throughput_channelizers[i][2], 0) )
             self.connect( (self.throughput_channelizers[i][2], 0), (self.throughput_channelizers[i][3], 0) )
             self.connect( (self.throughput_channelizers[i][3], 0), (self.throughput_channelizers[i][4], 0) )
-            self.connect( (self.throughput_channelizers[i][4], 0), (self, i) )
+            self.connect( (self.throughput_channelizers[i][4], 0), (self, i + int(self.debug)) )
     
         if len(self.activity_controlled_channels):
             for i in range(len(self.PowerActChans)):
@@ -283,8 +293,8 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             if msgoutput:
                 self.msg_connect( self.activity_detection_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
         
-        if self.verbose:
-            self.connect( (self.fft,0), (self.debugsink,0) )
+        if self.debug:
+            self.connect( (self.fft,0), (self, 0 ) )
         
         
     

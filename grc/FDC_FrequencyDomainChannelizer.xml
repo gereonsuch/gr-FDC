@@ -4,7 +4,7 @@
   <key>FDC_FrequencyDomainChannelizer</key>
   <category>[FDC]</category>
   <import>import FDC</import>
-  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks)</make>
+  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks, $debug)</make>
   
 
   <param_tab_order>
@@ -102,7 +102,22 @@
     <tab>General</tab>
   </param>
   
-  
+  <param>
+		<name>Debug Output</name>
+		<key>debug</key>
+		<type>enum</type>
+		<option>
+			<name>Yes</name>
+			<key>1</key>
+			<opt>hide:0</opt>
+		</option>
+		<option>
+			<name>No</name>
+			<key>0</key>
+			<opt>hide:1</opt>
+		</option>
+		<tab>General</tab>
+	</param>
   
   
   
@@ -306,6 +321,15 @@
 
   
   
+  
+  <source>
+	<name>debug</name>
+	<type>complex</type>
+	<vlen>$blocksize</vlen>
+	<optional>1</optional>
+	<hide>$debug.hide</hide>
+  </source>
+  
   <source>
     <name>throughput_out</name>
     <type>complex</type>
@@ -319,6 +343,8 @@
 	<type>message</type>
 	<optional>1</optional>
   </source>
+  
+  
   
   
   

@@ -154,6 +154,6 @@
     <name>msgout</name>
     <type>message</type>
     <optional>True</optional>
-    <hide>message.hide</hide>
+    <hide>$message.hide</hide>
   </source>
 </block>
