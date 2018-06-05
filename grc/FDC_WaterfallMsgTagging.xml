@@ -128,6 +128,11 @@ $(gui_hint() % $win)
     <type>float</type>
     <vlen>$blocklen</vlen>
   </sink>
+  
+  <sink>
+    <name>msgin</name>
+    <type>message</type>
+  </sink>
 
   
 </block>

@@ -431,6 +431,8 @@ void activity_detection_channelizer_vcm_impl::emit_channel(active_channel &c, se
         //add samprate, carrierfrequency, sps, ... if known.
         dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_double((double)(c.extract_width)/(double)blocklen));
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)blocklen));
+        dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(blockcount-c.count));
+        dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(blockcount));
 
         message_port_pub(outport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
     }
@@ -483,6 +485,8 @@ void activity_detection_channelizer_vcm_impl::emit_unfinished_channel(active_cha
         //add samprate, carrierfrequency, sps, ... if known.
         dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_double((double)(c.extract_width)/(double)blocklen));
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)blocklen));
+        dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(blockcount-c.count));
+        dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(blockcount));
 
         message_port_pub(outport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
 

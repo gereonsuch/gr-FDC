@@ -225,7 +225,9 @@ void PowerActivationChannel_impl::emit_data(bool fin){
         dict = pmt::dict_add(dict, pmt::intern("finalized"), pmt::from_bool(fin));
         dict = pmt::dict_add(dict, pmt::intern("part"), pmt::from_long(part));
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double( (double)(extract_start+extract_stop)/2.0/(double)blocklen ));
-        dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_long( (double)extract_width/(double)blocklen ));
+        dict = pmt::dict_add(dict, pmt::intern("rel_bw"), pmt::from_double( (double)extract_width/(double)blocklen ));
+        dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(blockcount-count));
+        dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(blockcount));
 
         message_port_pub(msgport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
     }
