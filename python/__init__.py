@@ -32,4 +32,5 @@ except ImportError:
 
 # import any pure python here
 from FrequencyDomainChannelizer import FrequencyDomainChannelizer
+from WaterfallMsgTagging import WaterfallMsgTagging
 #

@@ -31,7 +31,8 @@ endif()
 GR_PYTHON_INSTALL(
     FILES
     __init__.py
-    FrequencyDomainChannelizer.py DESTINATION ${GR_PYTHON_DIR}/FDC
+    FrequencyDomainChannelizer.py
+    WaterfallMsgTagging.py DESTINATION ${GR_PYTHON_DIR}/FDC
 )
 
 ########################################################################
