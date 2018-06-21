@@ -43,7 +43,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
     """
     docstring for block FrequencyDomainChannelizer
     """
-    def __init__(self, inptype, blocksize, relinvovl, 
+    def __init__(self, inptype, inpveclen, blocksize, relinvovl, 
                  throughput_channels, 
                  activity_controlled_channels, 
                  act_contr_threshold, 
@@ -134,6 +134,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             raise ValueError('Activity detection segments are invalid. Exiting...')
         
         
+        self.inpveclen=int(inpveclen) if int(inpveclen)>0 else 1
         self.blocksize=nextpow2(blocksize)
         self.relinvovl=nextpow2(relinvovl)
         self.ovllen=self.blocksize // self.relinvovl
@@ -145,7 +146,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         gr.hier_block2.__init__(self,
                                 "FreqDomChan",
-                                gr.io_signature_make(1, 1, self.itemsize),
+                                gr.io_signature_make(1, 1, self.itemsize * self.inpveclen),
                                 outsig)
         
         if len(self.throughput_channels)>0:
@@ -158,7 +159,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         gr.hier_block2.__init__(self,
                                 "FreqDomChan",
-                                gr.io_signature_make(1, 1, self.itemsize),
+                                gr.io_signature_make(1, 1, self.itemsize * self.inpveclen),
                                 outsig)
         
         #register message port if used
@@ -177,6 +178,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.log('# gr-FDC Frequency Domain Channelizer Runtime Information')
             self.log('\n' + '#'*32 + '\n')
             self.log('Blocksize     = {}'.format(self.blocksize))
+            self.log('InputVecLen   = {}'.format(self.inpveclen))
             self.log('Relinvovl     = {}'.format(self.relinvovl))
             self.log('Ovllen        = {}'.format(self.ovllen))
             self.log('MsgOutput     = {}'.format(msgoutput))
@@ -196,21 +198,29 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         
         #define blocks
-        self.inp_block_distr = blocks.stream_to_vector(self.itemsize, self.inpblocklen )
-        self.overlap_save = overlap_save(self.itemsize, self.blocksize, self.ovllen)
-        self.fft = None
-        if self.itemsize == gr.sizeof_gr_complex:
-            self.fft = fft.fft_vcc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), False, 4)
-        elif self.itemsize == gr.sizeof_gr_complex:
-            self.fft = fft.fft_vfc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), False, 4)
+        if self.inpveclen==1:
+            self.inp_block_distr = blocks.stream_to_vector(self.itemsize, self.inpblocklen )
+            self.overlap_save = overlap_save(self.itemsize, self.blocksize, self.ovllen)
+            self.fft = None
+            if self.itemsize == gr.sizeof_gr_complex:
+                self.fft = fft.fft_vcc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), False, 4)
+            elif self.itemsize == gr.sizeof_gr_complex:
+                self.fft = fft.fft_vfc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), False, 4)
+            else:
+                raise ValueError('Unknown input type. ')
+        
+        
+        if self.itemsize==gr.sizeof_float:
+            self.normalize_input = blocks.multiply_const_ff( 1.0/float(self.blocksize), self.blocksize)
         else:
-            raise ValueError('Unknown input type. ')
+            self.normalize_input = blocks.multiply_const_cc( 1.0/float(self.blocksize), self.blocksize)
         
         self.throughput_channelizers=[ [None]*5 for i in range(len(self.throughput_channels)) ]
         for i, (freq, bw) in enumerate(self.throughput_channels):
             f,l,lout,pbw,sbw = self.get_opt_channelparams(freq,bw)
             
-            self.log('# Throughput Channel {}: f={}, l={}, lout={}, bw=({}, {})'.format(i,f,l,lout,sbw,pbw))
+            if self.verbose:
+                self.log('# Throughput Channel {}: f={}, l={}, lout={}, bw=({}, {})'.format(i,f,l,lout,sbw,pbw))
             
             self.throughput_channelizers[i][0] = vector_cut_vxx(gr.sizeof_gr_complex, self.blocksize, f, l )
             self.throughput_channelizers[i][1] = phase_shifting_windowing_vcc(l, self.relinvovl, f, pbw, sbw, windowtype)
@@ -257,7 +267,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
                                                                                    bool(fileoutput), 
                                                                                    str(outputpath), 
                                                                                    bool(threaded),
-                                                                                   float(minchandist),
+                                                                                   self.get_bw(minchandist),
                                                                                    int(act_det_deactivation_delay) if int(act_det_deactivation_delay)>=0 else 0,
                                                                                    float(minchanflankpuffer) if 0.0<=float(minchanflankpuffer) else 0.2,
                                                                                    self.verbose)
@@ -269,12 +279,16 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         
         #define connections
-        self.connect( (self,0), (self.inp_block_distr,0) )
-        self.connect( (self.inp_block_distr,0), (self.overlap_save,0) )
-        self.connect( (self.overlap_save,0), (self.fft,0) )
+        if self.inpveclen==1:
+            self.connect( (self,0), (self.inp_block_distr,0) )
+            self.connect( (self.inp_block_distr,0), (self.overlap_save,0) )
+            self.connect( (self.overlap_save,0), (self.fft,0) )
+            self.connect( (self.fft,0), (self.normalize_input, 0) )
+        else:
+            self.connect( (self,0), (self.normalize_input, 0) )
         
         for i in list(range(self.N_throughput_channelizers)):
-            self.connect( (self.fft,0), (self.throughput_channelizers[i][0], 0) )
+            self.connect( (self.normalize_input,0), (self.throughput_channelizers[i][0], 0) )
             self.connect( (self.throughput_channelizers[i][0], 0), (self.throughput_channelizers[i][1], 0) )
             self.connect( (self.throughput_channelizers[i][1], 0), (self.throughput_channelizers[i][2], 0) )
             self.connect( (self.throughput_channelizers[i][2], 0), (self.throughput_channelizers[i][3], 0) )
@@ -283,18 +297,18 @@ class FrequencyDomainChannelizer(gr.hier_block2):
     
         if len(self.activity_controlled_channels):
             for i in range(len(self.PowerActChans)):
-                self.connect( (self.fft, 0), (self.PowerActChans[i], 0) )
+                self.connect( (self.normalize_input, 0), (self.PowerActChans[i], 0) )
                 if msgoutput:
                     self.msg_connect( self.PowerActChans[i], pmt.intern("msgout"), self, pmt.intern(self.msgport) )
             
         
         if len(self.activity_detection_segments):
-            self.connect( (self.fft, 0), (self.activity_detection_channelizer, 0) )
+            self.connect( (self.normalize_input, 0), (self.activity_detection_channelizer, 0) )
             if msgoutput:
                 self.msg_connect( self.activity_detection_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
         
         if self.debug:
-            self.connect( (self.fft,0), (self, 0 ) )
+            self.connect( (self.normalize_input,0), (self, 0 ) )
         
         
     

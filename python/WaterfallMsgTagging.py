@@ -105,7 +105,7 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
         blockleft=int(self.normwidth*(rel_cfreq-rel_bw/2.0))
         blockright=int(numpy.ceil(self.normwidth*(rel_cfreq+rel_bw/2.0)))
         
-        print('new msg: {} {} {} {}   {} {}'.format(blockstart, blockend, rel_cfreq, rel_bw, blockleft, blockright))
+        #print('new msg: {} {} {} {}   {} {}'.format(blockstart, blockend, rel_cfreq, rel_bw, blockleft, blockright))
         
         self.msg_puffer+=[(blockstart, blockend, blockleft, blockright)]
         
@@ -200,7 +200,7 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
         if end==self.normheight:
             end-=1
         
-        print('rect {} {} {} {}   {} {}'.format(blockstart, blockend, blockleft, blockright, begin,end))
+        #print('rect {} {} {} {}   {} {}'.format(blockstart, blockend, blockleft, blockright, begin,end))
         
         hline=numpy.kron(numpy.ones(blockright-blockleft, dtype=numpy.uint8), self.colorscheme_frame)
         vline=numpy.kron(numpy.ones((end-begin,1), dtype=numpy.uint8), self.colorscheme_frame)
@@ -211,9 +211,9 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
         self.pixels[end, blockleft*3:blockright*3]=hline
     
     def draw_h_line(self, blocknum, blockleft, blockright):
-        linenum=self.normheight - int(float(self.max_block-blocknum)/self.blockdecimation)
+        linenum=self.normheight - max(int(float(self.max_block-blocknum)/self.blockdecimation), 1)
         
-        print('hline {} {} {}     {}'.format(blocknum, blockleft, blockright, linenum))
+        #print('hline {} {} {}     {}'.format(blocknum, blockleft, blockright, linenum))
         
         hline=numpy.kron(numpy.ones(blockright-blockleft, dtype=numpy.uint8), self.colorscheme_frame)
         self.pixels[linenum, blockleft*3:blockright*3]=hline
@@ -221,7 +221,7 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
     def draw_v_line(self, blocknum, blockleft, blockright, up=True, length=4):
         linenum=self.normheight - int(float(self.max_block-blocknum)/self.blockdecimation)
         
-        print('vline {} {} {}     {}'.format(blocknum, blockleft, blockright, linenum))
+        #print('vline {} {} {}     {}'.format(blocknum, blockleft, blockright, linenum))
         
         if up:
             if linenum<length:
@@ -264,7 +264,7 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
         # 2 Black-Red-Yellow
         # 3 Black-White
         
-        print('colorscheme: {}\n\n'.format(colorscheme))
+        #print('colorscheme: {}\n\n'.format(colorscheme))
         
         N=1024
         colorscheme_bins=numpy.linspace(self.minvaldb, self.maxvaldb, N-1) #N-1 to apply values bigger maxvaldb

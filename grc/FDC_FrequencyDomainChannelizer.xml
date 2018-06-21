@@ -4,7 +4,7 @@
   <key>FDC_FrequencyDomainChannelizer</key>
   <category>[FDC]</category>
   <import>import FDC</import>
-  <make>FDC.FrequencyDomainChannelizer($type.size, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks, $debug)</make>
+  <make>FDC.FrequencyDomainChannelizer($type.size, $inpveclen, $blocksize, $relinvovl, $throughput_channels, $activity_controlled_channels, $act_contr_threshold, $fs, $centerfrequency, $freqmode, $windowtype, $msgoutput, $fileoutput, $outputpath, $threaded, $activity_detection_segments, $act_det_threshold, $minchandist, $act_det_deactivation_delay, $minchanflankpuffer, $verbose, $pow_act_deactivation_delay, $pow_act_maxblocks, $act_det_maxblocks, $debug)</make>
   
 
   <param_tab_order>
@@ -18,22 +18,25 @@
 <!-- ###General### -->
 
 <param>
-		<name>IO Type</name>
+		<name>Input Type</name>
 		<key>type</key>
 		<type>enum</type>
 		<option>
 			<name>Complex</name>
-			<key>complex</key>
+			<key>0</key>
+			<opt>tp:complex</opt>
 			<opt>size:gr.sizeof_gr_complex</opt>
 		</option>
 		<option>
 			<name>Float</name>
-			<key>float</key>
+			<key>1</key>
+			<opt>tp:float</opt>
 			<opt>size:gr.sizeof_float</opt>
 		</option>
 		<tab>General</tab>
 	</param>
-	
+
+  
 	
   <param>
     <name>Blocklen</name>
@@ -42,6 +45,16 @@
     <type>int</type>
     <tab>General</tab>
   </param>
+  
+  <param>
+    <name>Input Vector length</name>
+    <key>inpveclen</key>
+    <value>1</value>
+    <type>int</type>
+    <tab>General</tab>
+  </param>
+  
+  
   <param>
     <name>Relative inverse overlap</name>
     <key>relinvovl</key>
@@ -49,7 +62,6 @@
     <type>int</type>
     <tab>General</tab>
   </param>
-  
   
   <param>
 		<name>Threaded</name>
@@ -315,7 +327,8 @@
   
   <sink>
     <name>in</name>
-    <type>$type</type>
+    <type>$type.tp</type>
+    <vlen>$inpveclen</vlen>
   </sink>
 
 
@@ -361,6 +374,7 @@ This block implements blockwise overlapping, frequency transofmration and three 
 #General information#
 
  * IO Type is the input type, choose complex or float accordingly. 
+ * Input Vector Length determines, if the input is already FFT'ed or if this should be skipped, for example if you want to calculate the overlapped FFT external on an FPGA etc. 
  
  * Input is a complex or float stream
  * Output is message or file based or streams for constant output channels without carrier detection
