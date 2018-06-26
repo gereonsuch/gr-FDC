@@ -67,26 +67,26 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         #all frequencies are stored normalized, thus we need conversion
         #maybe further distinction to real signals(though FFT is complex)
-        self.get_freq=lambda f: f
-        self.set_freq=lambda f: f
-        self.get_bw=lambda bw: bw
+        self.get_freq=lambda f: (f+0.5)%1.0 #conversion to FDC
+        self.set_freq=lambda f: f-0.5 #from FDC to output
+        self.get_bw=lambda bw: bw%1.0
         self.set_bw=lambda bw: bw
         
         if freqmode==FREQMODE.normalized or freqmode=='normalized':
             self.freqmode=FREQMODE.normalized
         elif freqmode==FREQMODE.basebandfs or freqmode=='basebandfs':
             self.freqmode=FREQMODE.basebandfs
-            self.get_freq=lambda f: f*fs
-            self.set_freq=lambda f: f/fs
-            self.get_bw=lambda bw: bw/fs
-            self.set_bw=lambda bw: bw/fs
+            self.get_freq=lambda f: (f/fs+0.5)%1.0
+            self.set_freq=lambda f: (f-0.5)*fs
+            self.get_bw=lambda bw: (bw/fs) % 1.0
+            self.set_bw=lambda bw: bw*fs
             
         elif freqmode==FREQMODE.centerfreqfs or freqmode=='centerfreqfs':
             self.freqmode=FREQMODE.centerfreqfs
-            self.get_freq=lambda f: f*fs + centerfreq -fs/2
-            self.set_freq=lambda f: (f-centerfreq+fs/2)/fs
-            self.get_bw=lambda bw: bw/fs
-            self.set_bw=lambda bw: bw/fs
+            self.get_freq=lambda f: ((f-centerfrequency)/fs + 0.5)%1.0
+            self.set_freq=lambda f: (f-0.5)*fs + centerfrequency
+            self.get_bw=lambda bw: (bw/fs)%1.0
+            self.set_bw=lambda bw: bw*fs
         else:
             raise ValueError('Unknown Frequency mode. Exiting...')
         
@@ -203,9 +203,9 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.overlap_save = overlap_save(self.itemsize, self.blocksize, self.ovllen)
             self.fft = None
             if self.itemsize == gr.sizeof_gr_complex:
-                self.fft = fft.fft_vcc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), False, 4)
+                self.fft = fft.fft_vcc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), True, 4)
             elif self.itemsize == gr.sizeof_gr_complex:
-                self.fft = fft.fft_vfc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), False, 4)
+                self.fft = fft.fft_vfc(self.blocksize, True, (fft.window.rectangular(self.blocksize)), True, 4)
             else:
                 raise ValueError('Unknown input type. ')
         

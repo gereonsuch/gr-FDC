@@ -140,7 +140,7 @@
     </param>
     <param>
       <key>value</key>
-      <value>[ [0.12, 0.05], [0.22, 0.1], [0.45, 0.12], [0.71, 0.081] ]</value>
+      <value>[ [0.12, 0.05], [0.22, 0.1], [-0.14, 0.12], [0,0.081] ]</value>
     </param>
   </block>
   <block>
@@ -183,7 +183,7 @@
     </param>
     <param>
       <key>poll_rate</key>
-      <value>10</value>
+      <value>2.3</value>
     </param>
   </block>
   <block>
@@ -403,7 +403,7 @@
     </param>
     <param>
       <key>act_contr_threshold</key>
-      <value>6</value>
+      <value>4</value>
     </param>
     <param>
       <key>act_det_threshold</key>
@@ -482,11 +482,11 @@
     </param>
     <param>
       <key>maxvaldb</key>
-      <value>20</value>
+      <value>-20</value>
     </param>
     <param>
       <key>minvaldb</key>
-      <value>-35</value>
+      <value>-45</value>
     </param>
     <param>
       <key>relinvovl</key>
@@ -505,7 +505,7 @@
     <key>analog_fastnoise_source_x</key>
     <param>
       <key>amp</key>
-      <value>0.4</value>
+      <value>1.0</value>
     </param>
     <param>
       <key>alias</key>
