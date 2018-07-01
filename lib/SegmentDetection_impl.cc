@@ -138,8 +138,10 @@ SegmentDetection_impl::work(int noutput_items,
     for(int i=0;i<noutput_items;i++){ //1 item i = 1 block
         sig=in+i*d_blocklen; //sig is current block
 
-        //channel detection HERE
+        //channel detection
         detect_channels(sig);
+
+        //process of all channels HERE
 
         //finally iterate history pointer
         sig_hist=sig;
@@ -162,6 +164,7 @@ void SegmentDetection_impl::detect_channels(const gr_complex *in){
     //detect all possible channels, wether or not already active
     get_active_channels(poss_chans);
 
+    match_active_channels(poss_chans);
 
 
     str s="posschans_";
@@ -225,7 +228,7 @@ void SegmentDetection_impl::get_active_channels(std::deque<std::array<size_t, 2>
 
         next_end=std::upper_bound(falledge.begin(), falledge.end(), poss_start);
 
-        if(next_end-falledge.begin()>=falledge.size() || *next_end<=poss_start)
+        if(next_end-falledge.begin()>=falledge.size()) // || *next_end<=poss_start) //this is excluded by std::upper_bound
             continue; //discard if none found
 
         breaking=false;
@@ -243,7 +246,107 @@ void SegmentDetection_impl::get_active_channels(std::deque<std::array<size_t, 2>
     }
 }
 
+void SegmentDetection_impl::match_active_channels(std::deque<std::array<size_t, 2> > &poss_chans){
+    if(poss_chans.empty()){
+        for(struct active_channel &c:d_active_channels)
+            c.inactive+=1;
+        return; //nothing to do since poss_chans is empty
+    }
 
+    int pc_start, pc_end;
+    bool inactive;
+    int i;
+
+    for(struct active_channel &c: d_active_channels){
+        inactive=true;
+        i=0;
+        while(i<poss_chans.size()){
+            pc_start=poss_chans.begin()[i][0];
+            pc_end=poss_chans.begin()[i][1];
+
+            if( pc_start<c.detect_stop && pc_end>=c.detect_start ){
+                //this possible channel is overlapping an already active channel.
+                c.inactive=0; //this channel is marked as active!
+                inactive=false;
+                poss_chans.erase(poss_chans.begin()+i);
+            }else
+                i++;
+        }
+        //if no channel overlapping to currently active channel is found, it's deactivation counter is increased.
+        if(inactive)
+            c.inactive+=1;
+    }
+
+    //all remaining elements in poss_chans are new channels.
+    //poss_chans is necessarily without overlapping possible channels.
+    if(poss_chans.size())
+        for(std::array<size_t,2> &pc: poss_chans)
+            if( !activate(pc[0], pc[1]) ){
+                //Error occured, give additional infos
+                std::cerr << "Possible Chans[ " << poss_chans.size() <<" ]: ";
+                for(std::array<size_t, 2> &arr: poss_chans)
+                    std::cerr << "[" << arr[0] << ", " << arr[1] << "], ";
+                std::cerr << std::endl;
+            }
+}
+
+bool SegmentDetection_impl::activate(size_t detect_start, size_t detect_end){
+    //Creates a new channel in the segment. Start and stop of channel may exceed the segment, since
+    //the extraction flank exceeds the detection bandwidth.
+
+    size_t detect_width=detect_end - detect_start;
+    size_t extract_mid=detect_start + detect_width/2;
+    size_t extract_width=nextpow2( (size_t) ceil((double)detect_width * (1.0+2.0*d_window_flank_puffer)) );
+
+    if(extract_width>d_blocklen){
+        str s=str("channel width exceeds blocklen. start=") + num2str(detect_start) +
+                str(", end=") + num2str(detect_end) +
+                str(", width=")+ num2str(detect_width)+
+                str("\nresulting in width=")+num2str(extract_width) +
+                str(" blocklen=")+num2str(d_blocklen)+str("\n\n");
+        //throw std::invalid_argument(s.c_str());
+        //instead of throwing an error, log everything here to cerr and skip this channel.
+        std::cerr << s << std::endl;
+        return false; //can be caught where it's called
+    }
+
+    int extract_start=extract_mid-extract_width/2;
+    int extract_end=extract_mid+extract_width/2;
+
+    if(extract_start<0){
+        extract_start=0;
+        extract_end=extract_width;
+    }
+    if(extract_end>d_blocklen){
+        extract_end=d_blocklen;
+        extract_start=d_blocklen-extract_width;
+    }
+
+    struct active_channel c;
+    c.ID=d_active_channels_counter++; //increment counter and take last num as ID for new channel.
+    c.detect_start=detect_start;
+    c.detect_stop=detect_end;
+    c.extract_start=extract_start;
+    c.extract_stop=extract_end;
+    c.extract_width=extract_width;
+    c.extract_window=(int) log2((double) extract_width);
+    c.ovlskip=extract_width / d_relinvovl;
+    c.outputsamples=c.extract_width-c.ovlskip;
+    c.count=0;
+    c.phase=0;
+    c.phaseincrement=extract_start%d_relinvovl;
+    c.inactive=-1; //-1 is initialized.
+    c.part=0;
+    c.msg_ID=get_ID_for_msg(c.ID);
+
+    c.data.clear();
+
+    d_active_channels.push_back( c );
+
+    std::cout << "activated channel " << c.ID << " \t " << detect_start << ", " << detect_end << ", " << extract_start << std::endl;
+
+    return true;
+}
 
 void SegmentDetection_impl::cr_windows(){
     int num_window_sizes=(int) log2((double) d_blocklen)+1;
@@ -356,6 +459,27 @@ void SegmentDetection_impl::log(str s){
         }
         fclose(f);
     }
+}
+
+str SegmentDetection_impl::get_ID_for_msg(size_t chanID){
+    //convention for ID is timestamp.SRC.SEGMENTNUM.CONTNUM
+    str s=get_current_time() + str(".DETECTED.") + num2str(d_ID) + str(".") + num2str(chanID);
+    return s;
+}
+
+str SegmentDetection_impl::get_current_time(){
+    time_t rawtime;
+    struct tm * timeinfo;
+    char p[40];
+
+    time (&rawtime);
+    timeinfo = localtime (&rawtime);
+
+    strftime (p,80,"%Y-%m-%d-%H-%M-%S",timeinfo);
+
+    str s(p);
+
+    return s;
 }
 
 

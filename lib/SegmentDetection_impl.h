@@ -130,6 +130,9 @@ private:
     void set_chan_start_stop_width_dec(float start, float stop, float minchandist);
     void fftshift(gr_complex *in, gr_complex *out, int sz);
     void log(std::string s);
+    str get_ID_for_msg(size_t chanID);
+    str get_current_time();
+
 
 
 
@@ -137,10 +140,12 @@ private:
     void detect_channels(const gr_complex *in);
     void measure_power(const gr_complex *in);
     void get_active_channels(std::deque< std::array<size_t,2> > &poss_chans);
-    /*void match_active_channels(std::deque< std::array<size_t,2> > &poss_chans);
+    void match_active_channels(std::deque< std::array<size_t,2> > &poss_chans);
+
 
     bool activate(size_t detect_start, size_t detect_end);
 
+    /*
     //signal processing methodss
     void process_channel(const gr_complex *, struct active_channel &);
     void process_channel_hist(const gr_complex *, const gr_complex *, struct active_channel &);
