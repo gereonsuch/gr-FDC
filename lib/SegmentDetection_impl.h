@@ -44,8 +44,15 @@
 #include <sstream>
 #include <stdio.h>
 
+#include <boost/lexical_cast.hpp>
+
 namespace gr {
 namespace FDC {
+
+using str=std::string;
+//using num2str=boost::lexical_cast<std::string>;
+using fipair=std::pair<float, size_t>;
+bool fipair_sort(fipair &a, fipair &b){return a.first>b.first;}
 
 const float log2_10 = 3.32192809489f;
 
@@ -124,15 +131,15 @@ private:
     void fftshift(gr_complex *in, gr_complex *out, int sz);
     void log(std::string s);
 
-    /*
+
 
     //detection methods
     void detect_channels(const gr_complex *in);
     void measure_power(const gr_complex *in);
-    void get_active_channels(std::deque< std::array<int,2> > &poss_chans, float thresh);
-    void match_active_channels(std::deque< std::array<int,2> > &poss_chans);
+    void get_active_channels(std::deque< std::array<size_t,2> > &poss_chans);
+    /*void match_active_channels(std::deque< std::array<size_t,2> > &poss_chans);
 
-    bool activate(int detect_start, int detect_end);
+    bool activate(size_t detect_start, size_t detect_end);
 
     //signal processing methodss
     void process_channel(const gr_complex *, struct active_channel &);
@@ -153,12 +160,12 @@ public:
              gr_vector_void_star &output_items);
 };
 
-
 template <typename T> float mod_f(T x, T y);
 template<typename T> int nextpow2(T v);
 template<typename T> int lastpow2(T v);
 template<typename T> bool ispow2(T v);
 
+template<typename T> str num2str(T v);
 
 } // namespace FDC
 } // namespace gr

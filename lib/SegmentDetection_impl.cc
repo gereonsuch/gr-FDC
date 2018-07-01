@@ -29,7 +29,7 @@ namespace gr {
 namespace FDC {
 
 SegmentDetection::sptr
-SegmentDetection::make(int ID, int blocklen, int relinvovl, float seg_start, float seg_stop, float thresh, float minchandist, float window_flank_puffer, int maxblocks_to_emit, int channel_deactivation_delay, bool messageoutput, bool fileoutput, std::string path, bool threads, int verbose)
+SegmentDetection::make(int ID, int blocklen, int relinvovl, float seg_start, float seg_stop, float thresh, float minchandist, float window_flank_puffer, int maxblocks_to_emit, int channel_deactivation_delay, bool messageoutput, bool fileoutput, str path, bool threads, int verbose)
 {
     return gnuradio::get_initial_sptr
             (new SegmentDetection_impl(ID, blocklen, relinvovl, seg_start, seg_stop, thresh, minchandist, window_flank_puffer, maxblocks_to_emit, channel_deactivation_delay, messageoutput, fileoutput, path, threads, verbose));
@@ -38,7 +38,7 @@ SegmentDetection::make(int ID, int blocklen, int relinvovl, float seg_start, flo
 /*
      * The private constructor
      */
-SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl, float seg_start, float seg_stop, float thresh, float minchandist, float window_flank_puffer, int maxblocks_to_emit, int channel_deactivation_delay, bool messageoutput, bool fileoutput, std::string path, bool threads, int verbose)
+SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl, float seg_start, float seg_stop, float thresh, float minchandist, float window_flank_puffer, int maxblocks_to_emit, int channel_deactivation_delay, bool messageoutput, bool fileoutput, str path, bool threads, int verbose)
     : gr::sync_block("SegmentDetection",
                      gr::io_signature::make(1, 1, sizeof(gr_complex)*blocklen),
                      gr::io_signature::make(0, 0, 0))
@@ -49,7 +49,7 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
     d_threading=threads;
     if((VERBOSE) verbose==LOGTOFILE){
         d_verbose=LOGTOFILE;
-        d_logfile=std::string("gr-FDC.ActDetChan.ID_") + std::to_string(d_ID) + std::string(".log");
+        d_logfile=str("gr-FDC.ActDetChan.ID_") + num2str(d_ID) + str(".log");
         FILE *f=fopen(d_logfile.c_str(), "w");
         if(!f)
             std::cerr << "Logfile not writable: " << d_logfile << std::endl;
@@ -106,11 +106,11 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
         d_fileoutput_path=path;
     }
 
-    log(std::string("Threshold               ") + std::to_string(d_thresh));
-    log(std::string("decimation factor       ") + std::to_string(d_chan_detection_decimation_factor));
-    log(std::string("start                   ") + std::to_string(d_start));
-    log(std::string("stop                    ") + std::to_string(d_stop));
-    log(std::string("width                   ") + std::to_string(d_width));
+    log(str("Threshold               ") + num2str(d_thresh));
+    log(str("decimation factor       ") + num2str(d_chan_detection_decimation_factor));
+    log(str("start                   ") + num2str(d_start));
+    log(str("stop                    ") + num2str(d_stop));
+    log(str("width                   ") + num2str(d_width));
 
 
 
@@ -139,6 +139,7 @@ SegmentDetection_impl::work(int noutput_items,
         sig=in+i*d_blocklen; //sig is current block
 
         //channel detection HERE
+        detect_channels(sig);
 
         //finally iterate history pointer
         sig_hist=sig;
@@ -152,6 +153,96 @@ SegmentDetection_impl::work(int noutput_items,
     // Tell runtime system how many output items we produced.
     return noutput_items;
 }
+
+void SegmentDetection_impl::detect_channels(const gr_complex *in){
+    measure_power(in);
+
+    std::deque< std::array<size_t,2> > poss_chans;
+
+    //detect all possible channels, wether or not already active
+    get_active_channels(poss_chans);
+
+
+
+    str s="posschans_";
+    s+=num2str(d_blockcount);
+    s+="=[";
+    for(std::array<size_t,2> &a: poss_chans)
+        s+=str("(")+num2str(a[0])+str(", ")+num2str(a[1])+str("), ");
+    s+="]\n";
+
+    log(s);
+
+}
+
+void SegmentDetection_impl::measure_power(const gr_complex *in){
+    //calculate the decimated power over the segment
+
+    size_t N=d_power.size();
+    unsigned int alignment = volk_get_alignment();
+    float* tmp = (float*)volk_malloc(sizeof(float)*d_width, alignment);
+
+    volk_32fc_magnitude_squared_32f(tmp, in, d_width);
+
+    for(size_t i=0;i<N;i++)
+        volk_32f_accumulator_s32f(d_power.data()+i,
+                                  tmp+i*d_chan_detection_decimation_factor,
+                                  d_chan_detection_decimation_factor);
+
+    volk_free(tmp);
+}
+
+void SegmentDetection_impl::get_active_channels(std::deque<std::array<size_t, 2> > &poss_chans){
+    std::deque< fipair > riseedge;
+    std::deque< size_t > falledge; //no priorisation
+
+    float inversethresh=1.0f / d_thresh;
+
+    size_t N=d_power.size()-1;
+    unsigned int alignment = volk_get_alignment();
+    float* tmp = (float*)volk_malloc(sizeof(float)*N, alignment);
+
+    //calculate all powerdifferences and get possible rising and falling edges
+    volk_32f_x2_divide_32f(tmp, d_power.data()+1, d_power.data(), N);
+
+    for(size_t i;i<N;i++){
+        if(tmp[i] > d_thresh) riseedge.push_back( {tmp[i], i*d_chan_detection_decimation_factor + d_start} );
+        else if(tmp[i] < inversethresh) falledge.push_back( (i+1)*d_chan_detection_decimation_factor + d_start );
+    }
+
+    volk_free(tmp);
+
+
+    //sort rising edges
+    std::sort(riseedge.begin(), riseedge.end(), fipair_sort);
+
+    size_t poss_start;
+    std::deque<size_t>::iterator next_end;
+    bool breaking=false;
+    while(riseedge.size()){
+        poss_start=riseedge.front().second;
+        riseedge.pop_front();
+
+        next_end=std::upper_bound(falledge.begin(), falledge.end(), poss_start);
+
+        if(next_end-falledge.begin()>=falledge.size() || *next_end<=poss_start)
+            continue; //discard if none found
+
+        breaking=false;
+        for(std::array<size_t, 2> &arr: poss_chans)
+            if( poss_start<arr[1] && *next_end>=arr[0] ){
+                breaking=true;
+                break; //if overlapping with any, discard
+            }
+
+        if(breaking)
+            continue;
+
+        //no check failed, add it to poss_chans
+        poss_chans.push_back( {poss_start, *next_end} );
+    }
+}
+
 
 
 void SegmentDetection_impl::cr_windows(){
@@ -252,7 +343,7 @@ void SegmentDetection_impl::fftshift(gr_complex *in, gr_complex *out, int sz){
     memcpy( out+N2, in, N2*sizeof(gr_complex) );
 }
 
-void SegmentDetection_impl::log(std::string s){
+void SegmentDetection_impl::log(str s){
     if(d_verbose==LOGTOCONSOLE)
         std::cout << s << std::endl;
     else if(d_verbose==LOGTOFILE){
@@ -260,7 +351,7 @@ void SegmentDetection_impl::log(std::string s){
         if(!f)
             std::cerr << "Outputfile not writable: " << d_logfile << std::endl;
         else{
-            s+=std::string("\n");
+            s+=str("\n");
             fwrite(s.c_str(), sizeof(char), s.size(), f);
         }
         fclose(f);
@@ -292,6 +383,14 @@ bool ispow2(T v){
     if( v == (T) nextpow2(v) )
         return true;
     return false;
+}
+
+
+template <typename T>
+str num2str(T v){
+    std::ostringstream ss;
+    ss << v;
+    return str(ss.str());
 }
 
 
