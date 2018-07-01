@@ -1,5 +1,6 @@
 #excluding some folders for convinience
 build/
+build*/
 CMakeLists.txt.user
 examples/*.py
 examples/*.pyc
