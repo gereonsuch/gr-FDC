@@ -122,7 +122,7 @@ private:
     void save_hist(const gr_complex *in);
     void set_chan_start_stop_width_dec(float start, float stop, float minchandist);
     void fftshift(gr_complex *in, gr_complex *out, int sz);
-    void log(std::string &s);
+    void log(std::string s);
 
     /*
 

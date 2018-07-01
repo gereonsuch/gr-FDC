@@ -49,7 +49,7 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
     d_threading=threads;
     if((VERBOSE) verbose==LOGTOFILE){
         d_verbose=LOGTOFILE;
-        d_logfile=std::string("gr-FDC.ActDetChan.ID_") + std::string(d_ID) + std::string(".log");
+        d_logfile=std::string("gr-FDC.ActDetChan.ID_") + std::to_string(d_ID) + std::string(".log");
         FILE *f=fopen(d_logfile.c_str(), "w");
         if(!f)
             std::cerr << "Logfile not writable: " << d_logfile << std::endl;
@@ -61,7 +61,7 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
     else
         d_verbose=NOLOG;
 
-    //init base parameters
+    //init base and detection parameters
 
     d_blocklen=blocklen;
     if(!ispow2(d_blocklen))
@@ -78,18 +78,20 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
     d_blockcount=0;
     d_hist.resize(d_blocklen, gr_complex(0.0f, 0.0f));
 
-    //set detection start, stop, width and detection decimation factor
-    set_chan_start_stop_width_dec(seg_start, seg_stop, minchandist);
-
-    //create all possible windows for blocklen
-    cr_windows();
-
     d_maxblocks=maxblocks_to_emit;
     d_channel_deactivation_delay=channel_deactivation_delay;
 
     d_window_flank_puffer=window_flank_puffer;
     if(d_window_flank_puffer<0.0)
         throw std::invalid_argument("Window flank puffer must not be smaller 0.0. \n");
+
+    //set detection start, stop, width and detection decimation factor
+    set_chan_start_stop_width_dec(seg_start, seg_stop, minchandist);
+
+    //create all possible windows for blocklen
+    cr_windows();
+
+
 
     //set output parameters
     d_msg_output=messageoutput;
@@ -104,6 +106,11 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
         d_fileoutput_path=path;
     }
 
+    log(std::string("Threshold               ") + std::to_string(d_thresh));
+    log(std::string("decimation factor       ") + std::to_string(d_chan_detection_decimation_factor));
+    log(std::string("start                   ") + std::to_string(d_start));
+    log(std::string("stop                    ") + std::to_string(d_stop));
+    log(std::string("width                   ") + std::to_string(d_width));
 
 
 
@@ -148,7 +155,7 @@ SegmentDetection_impl::work(int noutput_items,
 
 
 void SegmentDetection_impl::cr_windows(){
-    int num_window_sizes=(int) log2((double) blocklen)+1;
+    int num_window_sizes=(int) log2((double) d_blocklen)+1;
     int winwidth;
     int puffersamples;
     float flank;
@@ -224,7 +231,7 @@ void SegmentDetection_impl::set_chan_start_stop_width_dec(float start, float sto
 
     //determine extraction start and stop
     size_t mid=(size_t) ((double) (0.5f*(start+stop)) * (double) d_blocklen);
-    d_start=mid-d_width<0 ? 0 : mid-d_width; //start minimum at 0
+    d_start=mid<d_width/2 ? 0 : mid-d_width/2; //start minimum at 0
     d_stop=d_start+d_width;
     if(d_stop > d_blocklen){
         d_stop=d_blocklen;
@@ -245,7 +252,7 @@ void SegmentDetection_impl::fftshift(gr_complex *in, gr_complex *out, int sz){
     memcpy( out+N2, in, N2*sizeof(gr_complex) );
 }
 
-void SegmentDetection_impl::log(std::string &s){
+void SegmentDetection_impl::log(std::string s){
     if(d_verbose==LOGTOCONSOLE)
         std::cout << s << std::endl;
     else if(d_verbose==LOGTOFILE){
