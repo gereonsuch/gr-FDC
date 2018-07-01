@@ -28,10 +28,6 @@
 namespace gr {
 namespace FDC {
 
-const char* debugfile = "/home/gereon/debug_actdetchan.py";
-
-
-
 template <typename T>
 std::string num2str(T k){
     std::ostringstream s;
@@ -176,12 +172,6 @@ activity_detection_channelizer_vcm_impl::activity_detection_channelizer_vcm_impl
     }
 
     cr_windows();
-
-    //debugging...
-    FILE *f = fopen( debugfile, "w" );
-    fputs("P=[] \n\n", f);
-    fputs("poss_chans=[] \n\n", f);
-    fclose(f);
 
     if(verbose){
         for(segment &seg: segments){
