@@ -126,6 +126,7 @@ private:
 
     //init and additional methods
     void cr_windows();
+    void set_threading(bool threading);
     void save_hist(const gr_complex *in);
     void set_chan_start_stop_width_dec(float start, float stop, float minchandist);
     void fftshift(gr_complex *in, gr_complex *out, int sz);
@@ -145,15 +146,20 @@ private:
 
     bool activate(size_t detect_start, size_t detect_end);
 
-    /*
+
     //signal processing methodss
+    void process_active_channels_single_thread(const gr_complex *hist, const gr_complex *sig);
+    void process_active_channels_multi_thread(const gr_complex *hist, const gr_complex *sig);
+
     void process_channel(const gr_complex *, struct active_channel &);
     void process_channel_hist(const gr_complex *, const gr_complex *, struct active_channel &);
-    void emit_channel(struct active_channel &, segment &);
-    void emit_unfinished_channel(struct active_channel &, segment &);
+    void emit_channel(struct active_channel &);
+    void emit_unfinished_channel(struct active_channel &);
 
     void clear_inactive_channels();
-    */
+
+    void (SegmentDetection_impl::*process_active_channels)(const gr_complex *hist, const gr_complex *sig);
+
 
 public:
     SegmentDetection_impl(int ID, int blocklen, int relinvovl, float seg_start, float seg_stop, float thresh, float minchandist, float window_flank_puffer, int maxblocks_to_emit, int channel_deactivation_delay, bool messageoutput, bool fileoutput, std::string path, bool threads, int verbose);
