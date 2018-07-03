@@ -13,6 +13,7 @@
 #include "FDC/vector_cut_vxx.h"
 #include "FDC/activity_detection_channelizer_vcm.h"
 #include "FDC/PowerActivationChannel.h"
+#include "FDC/SegmentDetection.h"
 %}
 
 
@@ -27,3 +28,5 @@ GR_SWIG_BLOCK_MAGIC2(FDC, vector_cut_vxx);
 GR_SWIG_BLOCK_MAGIC2(FDC, activity_detection_channelizer_vcm);
 %include "FDC/PowerActivationChannel.h"
 GR_SWIG_BLOCK_MAGIC2(FDC, PowerActivationChannel);
+%include "FDC/SegmentDetection.h"
+GR_SWIG_BLOCK_MAGIC2(FDC, SegmentDetection);

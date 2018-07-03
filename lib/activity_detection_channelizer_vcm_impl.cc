@@ -423,6 +423,8 @@ void activity_detection_channelizer_vcm_impl::emit_channel(active_channel &c, se
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)blocklen));
         dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(blockcount-c.count));
         dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(blockcount));
+        dict = pmt::dict_add(dict, pmt::intern("vectorstart"), pmt::from_long(c.extract_start));
+        dict = pmt::dict_add(dict, pmt::intern("vectorend"), pmt::from_long(c.extract_stop));
 
         message_port_pub(outport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
     }
@@ -477,6 +479,8 @@ void activity_detection_channelizer_vcm_impl::emit_unfinished_channel(active_cha
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)blocklen));
         dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(blockcount-c.count));
         dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(blockcount));
+        dict = pmt::dict_add(dict, pmt::intern("vectorstart"), pmt::from_long(c.extract_start));
+        dict = pmt::dict_add(dict, pmt::intern("vectorend"), pmt::from_long(c.extract_stop));
 
         message_port_pub(outport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
 

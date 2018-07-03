@@ -26,5 +26,6 @@ install(FILES
     phase_shifting_windowing_vcc.h
     vector_cut_vxx.h
     activity_detection_channelizer_vcm.h
-    PowerActivationChannel.h DESTINATION include/FDC
+    PowerActivationChannel.h
+    SegmentDetection.h DESTINATION include/FDC
 )

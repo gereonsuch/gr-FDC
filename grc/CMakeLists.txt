@@ -23,5 +23,6 @@ install(FILES
     FDC_FrequencyDomainChannelizer.xml
     FDC_activity_detection_channelizer_vcm.xml
     FDC_PowerActivationChannel.xml
-    FDC_WaterfallMsgTagging.xml DESTINATION share/gnuradio/grc/blocks
+    FDC_WaterfallMsgTagging.xml
+    FDC_SegmentDetection.xml DESTINATION share/gnuradio/grc/blocks
 )
