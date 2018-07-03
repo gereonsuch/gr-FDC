@@ -22,7 +22,7 @@
 from gnuradio import gr
 from gnuradio import blocks
 from gnuradio import fft
-from FDC import overlap_save, phase_shifting_windowing_vcc, vector_cut_vxx, activity_detection_channelizer_vcm, PowerActivationChannel
+from FDC import overlap_save, phase_shifting_windowing_vcc, vector_cut_vxx, PowerActivationChannel, SegmentDetection
 import numpy
 import pmt
 import os, time
@@ -255,25 +255,25 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         
         
         
-        #create activity detection channelizer if valid segments are present
-        
+        #create Segment Detection channelizer if valid segments are present
         if len(self.activity_detection_segments):
-            self.activity_detection_channelizer=activity_detection_channelizer_vcm(self.blocksize, 
-                                                                                   self.activity_detection_segments, 
-                                                                                   float(act_det_threshold), 
-                                                                                   self.relinvovl, 
-                                                                                   int(act_det_maxblocks), 
-                                                                                   bool(msgoutput), 
-                                                                                   bool(fileoutput), 
-                                                                                   str(outputpath), 
-                                                                                   bool(threaded),
-                                                                                   self.get_bw(minchandist),
-                                                                                   int(act_det_deactivation_delay) if int(act_det_deactivation_delay)>=0 else 0,
-                                                                                   float(minchanflankpuffer) if 0.0<=float(minchanflankpuffer) else 0.2,
-                                                                                   self.verbose)
-            #int v_blocklen, std::vector< std::vector< float > > v_segments, float v_thresh, int v_relinvovl, 
-            #int v_maxblocks, bool v_message, bool v_fileoutput, std::string v_path, bool v_threads, float v_minchandist, 
-            #int v_channel_deactivation_delay, double v_window_flank_puffer
+            self.SegmentDetectionChans=[None]*len(self.activity_detection_segments)
+            for i,(startf, stopf) in enumerate(self.activity_detection_segments):
+                self.SegmentDetectionChans[i]=SegmentDetection(i, 
+                                                               self.blocksize, 
+                                                               self.relinvovl, 
+                                                               startf, 
+                                                               stopf, 
+                                                               float(act_det_threshold), 
+                                                               self.get_bw(minchandist), 
+                                                               float(minchanflankpuffer) if 0.0<=float(minchanflankpuffer) else 0.2, 
+                                                               int(act_det_maxblocks), 
+                                                               int(act_det_deactivation_delay) if int(act_det_deactivation_delay)>=0 else 0, 
+                                                               bool(msgoutput),
+                                                               bool(fileoutput), 
+                                                               str(outputpath),
+                                                               bool(threaded),
+                                                               self.verbose)
             
             
         
@@ -303,9 +303,10 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             
         
         if len(self.activity_detection_segments):
-            self.connect( (self.normalize_input, 0), (self.activity_detection_channelizer, 0) )
-            if msgoutput:
-                self.msg_connect( self.activity_detection_channelizer, pmt.intern("msgout"), self, pmt.intern(self.msgport) )
+            for i in range(len(self.SegmentDetectionChans)):
+                self.connect( (self.normalize_input, 0), (self.SegmentDetectionChans[i], 0) )
+                if msgoutput:
+                    self.msg_connect( self.SegmentDetectionChans[i], pmt.intern("msgout"), self, pmt.intern(self.msgport) )
         
         if self.debug:
             self.connect( (self.normalize_input,0), (self, 0 ) )
