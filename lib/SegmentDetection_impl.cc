@@ -76,7 +76,6 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
         throw std::invalid_argument("Threshold is interpreted as dB and must be greater zero to detect channels accordingly. ");
     d_thresh=(float) pow( 10.0, (double)thresh/10.0 );
 
-    d_blockcount=0;
     d_hist.resize(d_blocklen, gr_complex(0.0f, 0.0f));
 
     d_maxblocks=maxblocks_to_emit;
@@ -114,6 +113,9 @@ SegmentDetection_impl::SegmentDetection_impl(int ID, int blocklen, int relinvovl
     log(str("width                   ") + num2str(d_width));
 
 
+    //init counters
+    d_active_channels_counter=0;
+    d_blockcount=0;
 
 
 
@@ -166,17 +168,10 @@ void SegmentDetection_impl::detect_channels(const gr_complex *in){
     //detect all possible channels, wether or not already active
     get_active_channels(poss_chans);
 
+    //match active channels
     match_active_channels(poss_chans);
 
 
-    str s="posschans_";
-    s+=num2str(d_blockcount);
-    s+="=[";
-    for(std::array<size_t,2> &a: poss_chans)
-        s+=str("(")+num2str(a[0])+str(", ")+num2str(a[1])+str("), ");
-    s+="]\n";
-
-    log(s);
 
 }
 
@@ -187,7 +182,7 @@ void SegmentDetection_impl::measure_power(const gr_complex *in){
     unsigned int alignment = volk_get_alignment();
     float* tmp = (float*)volk_malloc(sizeof(float)*d_width, alignment);
 
-    volk_32fc_magnitude_squared_32f(tmp, in, d_width);
+    volk_32fc_magnitude_squared_32f(tmp, in+d_start, d_width);
 
     for(size_t i=0;i<N;i++)
         volk_32f_accumulator_s32f(d_power.data()+i,
@@ -210,7 +205,7 @@ void SegmentDetection_impl::get_active_channels(std::deque<std::array<size_t, 2>
     //calculate all powerdifferences and get possible rising and falling edges
     volk_32f_x2_divide_32f(tmp, d_power.data()+1, d_power.data(), N);
 
-    for(size_t i;i<N;i++){
+    for(size_t i=0;i<N;i++){
         if(tmp[i] > d_thresh) riseedge.push_back( {tmp[i], i*d_chan_detection_decimation_factor + d_start} );
         else if(tmp[i] < inversethresh) falledge.push_back( (i+1)*d_chan_detection_decimation_factor + d_start );
     }
@@ -345,8 +340,6 @@ bool SegmentDetection_impl::activate(size_t detect_start, size_t detect_end){
 
     d_active_channels.push_back( c );
 
-    std::cout << "activated channel " << c.ID << " \t " << detect_start << ", " << detect_end << ", " << extract_start << std::endl;
-
     return true;
 }
 
@@ -367,6 +360,8 @@ void SegmentDetection_impl::process_active_channels_single_thread(const gr_compl
         for(struct active_channel &c: d_active_channels)
             if(c.data.size()>=d_maxblocks)
                 emit_unfinished_channel(c);
+
+    clear_inactive_channels();
 }
 
 void SegmentDetection_impl::process_active_channels_multi_thread(const gr_complex *hist, const gr_complex *sig){
@@ -396,6 +391,8 @@ void SegmentDetection_impl::process_active_channels_multi_thread(const gr_comple
     for(std::thread &t: threads)
         t.join();
     threads.clear();
+
+    clear_inactive_channels();
 
 }
 
@@ -457,6 +454,8 @@ void SegmentDetection_impl::emit_channel(active_channel &c){
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)d_blocklen));
         dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(d_blockcount-c.count));
         dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(d_blockcount));
+        dict = pmt::dict_add(dict, pmt::intern("vectorstart"), pmt::from_long(c.extract_start));
+        dict = pmt::dict_add(dict, pmt::intern("vectorend"), pmt::from_long(c.extract_stop));
 
         message_port_pub(d_msgport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
     }
@@ -510,6 +509,8 @@ void SegmentDetection_impl::emit_unfinished_channel(active_channel &c){
         dict = pmt::dict_add(dict, pmt::intern("rel_cfreq"), pmt::from_double((double)(c.extract_start+c.extract_stop)/2.0/(double)d_blocklen));
         dict = pmt::dict_add(dict, pmt::intern("blockstart"), pmt::from_long(d_blockcount-c.count));
         dict = pmt::dict_add(dict, pmt::intern("blockend"), pmt::from_long(d_blockcount));
+        dict = pmt::dict_add(dict, pmt::intern("vectorstart"), pmt::from_long(c.extract_start));
+        dict = pmt::dict_add(dict, pmt::intern("vectorend"), pmt::from_long(c.extract_stop));
 
         message_port_pub(d_msgport, pmt::cons(dict, pmt::init_c32vector( d.size(), d ))); //emit as PDU
 
