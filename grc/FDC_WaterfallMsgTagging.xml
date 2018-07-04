@@ -10,6 +10,10 @@
 $(win) = FDC.WaterfallMsgTagging($blocklen, $samp_rate, $relinvovl, $blockdecimation, $loginput, $minvaldb, $maxvaldb, $colorscheme, $tagmode)
 $(gui_hint() % $win)
 </make>
+	<callback>set_minvaldb($minvaldb)</callback>
+	<callback>set_maxvaldb($maxvaldb)</callback>
+	<callback>set_colorscheme($colorscheme)</callback>
+	
   
   <param>
     <name>Blocklen</name>

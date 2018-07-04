@@ -46,7 +46,7 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
         
         self.pixels=numpy.zeros((1,self.normwidth*3), dtype=numpy.uint8)
         
-        self.colorscheme_cols, self.colorscheme_bins, self.colorscheme_frame = self.cr_colorscheme(int(colorscheme))
+        self.set_colorscheme(colorscheme)
         
         self.min_redraw_time=0.05
         self.last_drawn=0.0
@@ -255,8 +255,23 @@ class WaterfallMsgTagging(gr.sync_block, QtGui.QWidget):
         
         return len(input_items[0])
     
+    
+    
+    
     def apply_colorscheme(self, blocks):
         return self.colorscheme_cols[numpy.digitize(blocks, self.colorscheme_bins, False)].astype(numpy.uint8).reshape(blocks.size*3)
+    
+    def set_minvaldb(self, minvaldb):
+        self.minvaldb=float(minvaldb)
+        self.colorscheme_cols, self.colorscheme_bins, self.colorscheme_frame = self.cr_colorscheme(int(self.colorscheme))
+    
+    def set_maxvaldb(self, maxvaldb):
+        self.maxvaldb=float(maxvaldb)
+        self.colorscheme_cols, self.colorscheme_bins, self.colorscheme_frame = self.cr_colorscheme(int(self.colorscheme))
+    
+    def set_colorscheme(self, colorscheme):
+        self.colorscheme=colorscheme
+        self.colorscheme_cols, self.colorscheme_bins, self.colorscheme_frame = self.cr_colorscheme(int(self.colorscheme))
     
     def cr_colorscheme(self, colorscheme):
         # 0 Black-Blue-Cyan-White
