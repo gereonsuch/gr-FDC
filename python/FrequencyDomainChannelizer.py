@@ -215,18 +215,20 @@ class FrequencyDomainChannelizer(gr.hier_block2):
         else:
             self.normalize_input = blocks.multiply_const_cc( 1.0/float(self.blocksize), self.blocksize)
         
-        self.throughput_channelizers=[ [None]*5 for i in range(len(self.throughput_channels)) ]
+        self.throughput_channelizers=[ [None]*6 for i in range(len(self.throughput_channels)) ]
         for i, (freq, bw) in enumerate(self.throughput_channels):
             f,l,lout,pbw,sbw = self.get_opt_channelparams(freq,bw)
+            dec=self.blocksize/l
             
             if self.verbose:
-                self.log('# Throughput Channel {}: dec={}, f={}, l={}, lout={}, bw=({}, {})'.format(i,self.blocksize/l,f,l,lout,pbw,sbw))
+                self.log('# Throughput Channel {}: dec={}, f={}, l={}, lout={}, bw=({}, {})'.format(i,dec,f,l,lout,pbw,sbw))
             
             self.throughput_channelizers[i][0] = vector_cut_vxx(gr.sizeof_gr_complex, self.blocksize, f, l )
             self.throughput_channelizers[i][1] = phase_shifting_windowing_vcc(l, self.relinvovl, f, pbw, sbw, windowtype)
             self.throughput_channelizers[i][2] = fft.fft_vcc(l, False, (fft.window.rectangular(l)), True, 1)
             self.throughput_channelizers[i][3] = vector_cut_vxx(gr.sizeof_gr_complex, l, l-lout, lout )
             self.throughput_channelizers[i][4] = blocks.vector_to_stream(gr.sizeof_gr_complex, lout)
+            self.throughput_channelizers[i][5] = blocks.multiply_const_cc( self.blocksize/dec, 1)
         
         self.N_throughput_channelizers=len(self.throughput_channelizers)
         
@@ -293,7 +295,8 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             self.connect( (self.throughput_channelizers[i][1], 0), (self.throughput_channelizers[i][2], 0) )
             self.connect( (self.throughput_channelizers[i][2], 0), (self.throughput_channelizers[i][3], 0) )
             self.connect( (self.throughput_channelizers[i][3], 0), (self.throughput_channelizers[i][4], 0) )
-            self.connect( (self.throughput_channelizers[i][4], 0), (self, i + int(self.debug)) )
+            self.connect( (self.throughput_channelizers[i][4], 0), (self.throughput_channelizers[i][5], 0) )
+            self.connect( (self.throughput_channelizers[i][5], 0), (self, i + int(self.debug)) )
     
         if len(self.activity_controlled_channels):
             for i in range(len(self.PowerActChans)):

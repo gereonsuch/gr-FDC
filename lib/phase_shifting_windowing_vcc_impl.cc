@@ -59,7 +59,7 @@ phase_shifting_windowing_vcc_impl::phase_shifting_windowing_vcc_impl(int blockle
 
 
     //phase corr factors to each window
-    cr_win(windowtype, blocksize, passbw, stopbw, windows, relinvovl, 1);
+    cr_win(windowtype, blocksize, passbw, stopbw, windows, relinvovl, 1, false);
 }
 
 /*
