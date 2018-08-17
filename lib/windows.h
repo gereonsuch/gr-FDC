@@ -117,8 +117,8 @@ void cr_hann_win(int blocksize, int lowsamps, int rampsamps, std::vector<double>
 
     double phi;
     for(int i=0;i<rampsamps;i++){
-        phi=(double)(i+1) / (double)(rampsamps+1) * M_PI - M_PI/2.0;
-        w[lowsamps+i] = v*sin(phi)/2.0+0.5;
+        phi=(double)(i+1) / (double)(rampsamps+1) * M_PI;
+        w[lowsamps+i] = v*(-cos(phi)/2.0+0.5);
         w[blocksize -lowsamps -1 -i] = w[lowsamps+i];
     }
 }
