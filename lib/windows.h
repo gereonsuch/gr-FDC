@@ -78,7 +78,7 @@ void cr_win(int wintype, int blocksize, int lowsamps, int rampsamps, std::vector
 }
 
 void cr_rect_win(int blocksize, int lowsamps, int rampsamps, std::vector<double> &w, bool normalize){
-    double v=1.0 ? normalize : 1.0/(double)blocksize;
+    double v=normalize? 1.0 : 1.0/(double)blocksize;
 
     w.clear();
     w.resize(blocksize, v);
@@ -90,7 +90,7 @@ void cr_rect_win(int blocksize, int lowsamps, int rampsamps, std::vector<double>
 }
 
 void cr_ramp_win(int blocksize, int lowsamps, int rampsamps, std::vector<double> &w, bool normalize){
-    double v=1.0 ? normalize : 1.0/(double)blocksize;
+    double v=normalize? 1.0 : 1.0/(double)blocksize;
     w.clear();
     w.resize(blocksize, v);
 
@@ -106,7 +106,7 @@ void cr_ramp_win(int blocksize, int lowsamps, int rampsamps, std::vector<double>
 }
 
 void cr_hann_win(int blocksize, int lowsamps, int rampsamps, std::vector<double> &w, bool normalize){
-    double v=1.0 ? normalize : 1.0/(double)blocksize;
+    double v=normalize? 1.0 : 1.0/(double)blocksize;
     w.clear();
     w.resize(blocksize, v);
 

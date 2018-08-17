@@ -220,7 +220,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             f,l,lout,pbw,sbw = self.get_opt_channelparams(freq,bw)
             
             if self.verbose:
-                self.log('# Throughput Channel {}: f={}, l={}, lout={}, bw=({}, {})'.format(i,f,l,lout,sbw,pbw))
+                self.log('# Throughput Channel {}: dec={}, f={}, l={}, lout={}, bw=({}, {})'.format(i,self.blocksize/l,f,l,lout,pbw,sbw))
             
             self.throughput_channelizers[i][0] = vector_cut_vxx(gr.sizeof_gr_complex, self.blocksize, f, l )
             self.throughput_channelizers[i][1] = phase_shifting_windowing_vcc(l, self.relinvovl, f, pbw, sbw, windowtype)
@@ -331,6 +331,7 @@ class FrequencyDomainChannelizer(gr.hier_block2):
             stopband=passband+0.25
         
         freqsamps=int(round(freq*self.blocksize)) % self.blocksize
+        freqsamps-=blocklen/2
         if freqsamps<0:
             freqsamps=(freqsamps + self.blocksize) % self.blocksize
         if freqsamps+blocklen > self.blocksize:
