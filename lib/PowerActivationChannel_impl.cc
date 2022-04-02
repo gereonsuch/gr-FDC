@@ -261,7 +261,7 @@ void PowerActivationChannel_impl::process_channel(const gr_complex *sig){
     std::vector< gr_complex > x; //tmp vector
     x.resize(extract_width);
 
-    gr::fft::fft_complex ifft(extract_width, false, 1); //gnuradio fft object
+    gr::fft::fft_complex_rev ifft(extract_width, 1); //gnuradio fft object
 
     //multiply with window
     volk_32fc_x2_multiply_32fc(x.data(), sig+extract_start, windows[phase].data(), extract_width);

@@ -21,7 +21,7 @@
 #ifndef INCLUDED_FDC_ACTIVITY_DETECTION_CHANNELIZER_VCM_IMPL_H
 #define INCLUDED_FDC_ACTIVITY_DETECTION_CHANNELIZER_VCM_IMPL_H
 
-#include <FDC/activity_detection_channelizer_vcm.h>
+#include <gnuradio/FDC/activity_detection_channelizer_vcm.h>
 #include <gnuradio/fft/fft.h>
 #include <vector>
 #include <deque>

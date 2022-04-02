@@ -374,7 +374,7 @@ void activity_detection_channelizer_vcm_impl::process_channel(const gr_complex *
     std::vector< gr_complex > x; //tmp vector
     x.resize(c.extract_width);
 
-    gr::fft::fft_complex ifft(c.extract_width, false, 1); //gnuradio fft object
+    gr::fft::fft_complex_rev ifft(c.extract_width, 1); //gnuradio fft object
 
     //multiply with window
     volk_32fc_x2_multiply_32fc(x.data(), sig+c.extract_start, windows[c.extract_window][c.phase].data()  , c.extract_width);
