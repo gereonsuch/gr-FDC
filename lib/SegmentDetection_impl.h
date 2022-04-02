@@ -21,7 +21,7 @@
 #ifndef INCLUDED_FDC_SEGMENTDETECTION_IMPL_H
 #define INCLUDED_FDC_SEGMENTDETECTION_IMPL_H
 
-#include <FDC/SegmentDetection.h>
+#include <gnuradio/FDC/SegmentDetection.h>
 #include <gnuradio/fft/fft.h>
 #include <volk/volk.h>
 #include <pmt/pmt.h>

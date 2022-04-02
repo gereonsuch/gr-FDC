@@ -401,7 +401,7 @@ void SegmentDetection_impl::process_channel(const gr_complex *sig, active_channe
     gr_complex* tmp = (gr_complex*)volk_malloc(sizeof(gr_complex)*c.extract_width, alignment);
 
 
-    gr::fft::fft_complex ifft(c.extract_width, false, 1); //gnuradio fft object
+    gr::fft::fft_complex_rev ifft(c.extract_width, 1); //gnuradio fft object
 
     //multiply with window
     volk_32fc_x2_multiply_32fc(tmp,

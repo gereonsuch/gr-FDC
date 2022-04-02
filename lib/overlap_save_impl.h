@@ -21,7 +21,7 @@
 #ifndef INCLUDED_FDC_OVERLAP_SAVE_IMPL_H
 #define INCLUDED_FDC_OVERLAP_SAVE_IMPL_H
 
-#include <FDC/overlap_save.h>
+#include <gnuradio/FDC/overlap_save.h>
 
 namespace gr {
 namespace FDC {

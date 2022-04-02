@@ -21,7 +21,7 @@
 #ifndef INCLUDED_FDC_POWERACTIVATIONCHANNEL_IMPL_H
 #define INCLUDED_FDC_POWERACTIVATIONCHANNEL_IMPL_H
 
-#include <FDC/PowerActivationChannel.h>
+#include <gnuradio/FDC/PowerActivationChannel.h>
 
 #include <complex>
 #include <deque>

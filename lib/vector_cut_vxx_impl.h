@@ -21,7 +21,7 @@
 #ifndef INCLUDED_FDC_VECTOR_CUT_VXX_IMPL_H
 #define INCLUDED_FDC_VECTOR_CUT_VXX_IMPL_H
 
-#include <FDC/vector_cut_vxx.h>
+#include <gnuradio/FDC/vector_cut_vxx.h>
 
 namespace gr {
 namespace FDC {

@@ -21,7 +21,7 @@
 #ifndef INCLUDED_FDC_PHASE_SHIFTING_WINDOWING_VCC_IMPL_H
 #define INCLUDED_FDC_PHASE_SHIFTING_WINDOWING_VCC_IMPL_H
 
-#include <FDC/phase_shifting_windowing_vcc.h>
+#include <gnuradio/FDC/phase_shifting_windowing_vcc.h>
 #include <volk/volk.h>
 #include <exception>
 #include <math.h>
